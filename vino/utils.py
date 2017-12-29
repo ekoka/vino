@@ -1,0 +1,2 @@
+# sentinel
+_undef = object()

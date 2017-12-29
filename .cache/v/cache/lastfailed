@@ -1,0 +1,8 @@
+{
+  "tests/test_filters.py::test_calling_required_filter_with_boolean_sets_inner_value": true,
+  "tests/test_filters.py::test_instance_of_Required_created_without_value_sets_it_to_default": true,
+  "tests/test_filters.py::test_inversing_boolean_type_instance_returns_instance": true,
+  "tests/test_filters.py::test_required_filter_responds_to_bool_not_operator": true,
+  "tests/test_filters.py::test_required_filter_returns_an_instance_of_it": true,
+  "tests/test_filters.py::test_treating_required_like_boolean_returns_another_boolean_filter": true
+}
