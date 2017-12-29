@@ -1,0 +1,9 @@
+*.pyc
+.cache
+tsk
+uwsgi.ini
+website/*.html
+templates/pages
+logs
+website
+templates/pages
