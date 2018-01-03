@@ -1,3 +1,4 @@
+from ..errors import VinoError
 class Runner:
     def run(self, *a, **kw):
         raise NotImplementedError()
@@ -35,6 +36,7 @@ class ProcessorRunner(Runner):
     def run(value, context=None):
         self.processor.run(value, context)
 
+# NOTE: I'm not sure this is still needed
 class ContextRunner(Runner):
     def __init__(self, context):
         self.context = self._valid_context(context)
@@ -52,19 +54,31 @@ class RunnerStack:
     TODO: some processors should be excluded from some contexts.
     """
     def __init__(self, context, *processors):
+        import logging 
+        logger = logging.getLogger('vino')
         self.context = context
-        for p in processors:
+        self.runners = []
+        logger.info(processors)
+        for i, p in enumerate(processors):
             try:
                 runner = ProcessorRunner(p)
             except VinoError:
+                # NOTE: this will not be called for Contexts since they now 
+                # mimick Processor's API
+
                 # is this an ArrayItemsContext-like object?
                 runner = ContextRunner(p)
                 # check that the object has 
             self.runners.append(runner)
+        logger.info(self.runners)
+        logger.info(i)
 
     def run(self, value):
         for r in self.runners:
             value = r.run(value, self.context)
+
+    def __len__(self):
+        return len(self.runners)
 
 class Qualifier:
     def qualify(self, item, index=None): pass
