@@ -12,7 +12,7 @@ class VinoContext:
     def __init__(self, *processors, name=None): # name is a keyword-only argument
         self.name = name
         # prepend context to list of processors
-        processors = [self] + processors
+        processors = (self,) + processors
         self._runners = RunnerStack(self, *processors)
 
     def run(self, context, value):

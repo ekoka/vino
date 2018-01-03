@@ -54,11 +54,8 @@ class RunnerStack:
     TODO: some processors should be excluded from some contexts.
     """
     def __init__(self, context, *processors):
-        import logging 
-        logger = logging.getLogger('vino')
         self.context = context
         self.runners = []
-        logger.info(processors)
         for i, p in enumerate(processors):
             try:
                 runner = ProcessorRunner(p)
@@ -70,8 +67,6 @@ class RunnerStack:
                 runner = ContextRunner(p)
                 # check that the object has 
             self.runners.append(runner)
-        logger.info(self.runners)
-        logger.info(i)
 
     def run(self, value):
         for r in self.runners:
@@ -79,6 +74,9 @@ class RunnerStack:
 
     def __len__(self):
         return len(self.runners)
+
+    def __getitem__(self, index):
+        return self.runners[index]
 
 class Qualifier:
     def qualify(self, item, index=None): pass
