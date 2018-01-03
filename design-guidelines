@@ -25,10 +25,11 @@ challenges
         - or a list when referring to an array
         - in turn each of the pointed to objects map to inner elements
         {'a': {'aa':None, 'bb': None, 'cc':{}}, 'b': [None,None,None,{}, [], None], 'c': None, 'd':None}: 
-- outputs a branch to an element in the form of a DataPath
+- outputs a branch to an element in the form of a GraphPath
 
-# DataPath
-- a thin wrapper around a list that provides a means to map to various attributes of the data
+# GraphPath
+- a representation of a path to get to an attribute of the data
+- internally stores a list of path to get to an attribute of the data
 - ['a', 'cc', 'cca', 0] would be dereferrenced using the DataGraph object as such
 
     def get(path):
@@ -43,10 +44,15 @@ challenges
     dp['a']['cc']['cca'][0]
 
 # Attribute Alias
-- a provides a mean to call any item by a different name simply by providing a DataPath
+- a provides a mean to call any item by a different name simply by providing a GraphPath
     DataGraph.alias(['a','cc','cca', 0], fnc) # use callbacks to internationalize
     DataGraph.alias(['a','cc','cca', 0], 'Some Other Name')
-    DataGraph.alias(DataPath('a','cc','cca', range(0)), 'Some Other Name')
+    DataGraph.alias(vino.graph.dp('a','cc','cca', range(0)), 'Some Other Name')
+    # or should it rather go to the GraphPath object?
+    vino.graph.dp('a','cc','cca', range(0)).alias('Some Other Name')
 
 
 
+# events
+- place hooks for the various validation events
+- 
