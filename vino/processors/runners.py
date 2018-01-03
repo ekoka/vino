@@ -60,6 +60,7 @@ class RunnerStack:
             try:
                 runner = ProcessorRunner(p)
             except VinoError:
+                raise
                 # NOTE: this will not be called for Contexts since they now 
                 # mimick Processor's API
 
