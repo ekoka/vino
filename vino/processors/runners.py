@@ -33,8 +33,8 @@ class ProcessorRunner(Runner):
                 else repr(processor))
         raise VinoError('Invalid Processor {}'.format(name))
 
-    def run(value, context=None):
-        self.processor.run(value, context)
+    def run(self, value, context=None):
+        return self.processor(value, context)
 
 # NOTE: I'm not sure this is still needed
 class ContextRunner(Runner):
@@ -72,6 +72,7 @@ class RunnerStack:
     def run(self, value):
         for r in self.runners:
             value = r.run(value, self.context)
+        return value
 
     def __len__(self):
         return len(self.runners)

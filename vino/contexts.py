@@ -1,6 +1,6 @@
 from .errors import VinoError, ValidationError, ValidationErrorStack
 from .processors.runners import RunnerStack
-from .utils import is_str
+from . import utils
 
 class VinoContext:
     ''' The Context represent the primary scope of influence of a processor.
@@ -15,7 +15,7 @@ class VinoContext:
         processors = (self,) + processors
         self._runners = RunnerStack(self, *processors)
 
-    def run(self, context, value):
+    def run(self, value, context):
         """ Let's quack like a Processor """
         # default behaviour is to simply return the value untouched
         return value
@@ -24,28 +24,32 @@ class VinoContext:
 class BasicContext(VinoContext):
         
     def validate(self, value):
-        errors = []
-        result = None
-        for f in self.processors:
-            try:
-                value = f.run(value)
-            except ValidationError as e:
-                if e.interrupt_validation: #  
-                    raise e
-                errors.append(e)
-            except AttributeError as e:
-                value = f(value, datagraph)
-        if errors: 
-            raise ValidationErrorStack(errors)
+        # raises ValidationErrorStack
+        value = self._runners.run(value)
+        return value
+
+    def run(self, value, context):
+        if (utils.is_str(value) or utils.is_numberlike(value) 
+            or utils.is_boolean(value) or value is None):
+            return value
+        # TODO more descriptive message
+        raise ValidationError('Wrong value provided for Basic type.', True)
+
+
+        # TODO: handle bytes somehow
+        # if utils.is_iterable(value, exclude_dict=False):
+        #     raise errors.ValidationError('Expected Basic Type ')
+
 
 
 class ArrayContext(VinoContext):
 
-    def validate(self, data):
-        for runner in self.stack:
-            runner.run(data)
+    def validate(self, value):
+        for runner in self._runners:
+            value = runner.run(value)
+        return value
 
-    def run(self, value):
+    def run(self, value, context):
         # ensures that value is None or if not set 
         # otherwise ensures that value is set to a non-dict sequence 
         # then attempts to convert it to a list

@@ -40,6 +40,9 @@ def is_iterable(value,
         return False
     return True
 
+def is_boolean(value):
+    return value in (True, False)
+
 def is_str(value):
     return hasattr(value, 'encode')
 

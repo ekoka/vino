@@ -8,15 +8,6 @@ def context():
     class rv(contexts.VinoContext): pass
     return rv
 
-@pytest.fixture
-def processors():
-    length = 5
-    def create_fnc(i):
-        return lambda: i
-    processors = [create_fnc(i) for i in range(length)]
-    return processors
-
-
 def test_RunnerStack_returns_number_of_runners_on_len(processors):
     length = len(processors)
     stack = runners.RunnerStack(None, *processors)
@@ -56,3 +47,28 @@ def test_first_runner_in_context_wraps_context_run_method(context, processors):
     context.run = lambda*a,**kw: 'abc'
     c = context(*processors)
     assert c._runners[0].processor() == 'abc'
+
+def test_basic_context_can_validate_basic_types():
+    b = contexts.BasicContext()
+    r = b.validate(1)
+    assert r==1
+
+@pytest.mark.xfail
+def test_basic_context_can_fail_non_basic_types():
+    assert 0
+
+@pytest.mark.xfail
+def test_ValidationError_has_interrupt_validation_attribute():
+    assert 0
+
+@pytest.mark.xfail
+def test_ValidationErrorStack_acts_like_list_on_append():
+    assert 0
+
+@pytest.mark.xfail
+def test_BasicContext_type_check_interrupts_validation_on_failure():
+    assert 0
+
+@pytest.mark.xfail
+def test_runner_stack_interrupts_validation_if_flag_raised_on_error():
+    assert 0
