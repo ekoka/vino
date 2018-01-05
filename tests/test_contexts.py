@@ -1,4 +1,5 @@
 from vino import contexts
+from vino import errors as err
 from vino.processors import runners
 from vino.processors import processors as proc
 import pytest
@@ -48,27 +49,111 @@ def test_first_runner_in_context_wraps_context_run_method(context, processors):
     c = context(*processors)
     assert c._runners[0].processor() == 'abc'
 
-def test_basic_context_can_validate_basic_types():
+# ---- less abstract tests
+
+def test_basic_context_with_no_added_processors_returns_value(randstr):
     b = contexts.BasicContext()
-    r = b.validate(1)
-    assert r==1
+    assert b.validate(randstr)==randstr
+
+def test_basic_context_can_validate_basic_type():
+    b = contexts.BasicContext()
+    b.validate(1)
+    b.validate(1.2)
+    b.validate(None)
+    b.validate("")
+    b.validate("(- . -)")
+    b.validate(False)
+    b.validate(True)
+
+def test_basic_context_raises_ValidationError_on_invalid_basic_type():
+    b = contexts.BasicContext()
+    with pytest.raises(err.ValidationError) as exc:
+        b.validate([])
+    with pytest.raises(err.ValidationError) as exc:
+        b.validate(list('abcdef'))
+    with pytest.raises(err.ValidationError) as exc:
+        b.validate({'a': 'e'})
+    #TODO: what happens with byte type
+
+def test_BasicContext_executes_all_validations_in_fifo(tags):
+    # tags are : bold, italic, and underline in that order
+    b = contexts.BasicContext(*tags)
+    value = b.validate('some contents')
+    assert value=='<u><i><b>'+'some contents'+'</b></i></u>'
+
+def test_validation_continues_if_interrupt_flag_not_raised(tags):
+    # tags are : bold, italic, and underline in that order
+    def failing_processor(value, context):
+        e = err.ValidationError("I'll fail you, no matter what", 
+                            interrupt_validation=False)
+        raise e
+    processors = (failing_processor,) + tags
+    try:
+        b = contexts.BasicContext(*processors)
+        value = b.validate('some contents')
+    except err.ValidationErrorStack as e:
+        assert e.value=='<u><i><b>'+'some contents'+'</b></i></u>'
+
+def test_ValidationError_contains_failing_value_after_validation(tags):
+    # tags are : bold, italic, and underline in that order
+    def failing_processor(value, context):
+        e = err.ValidationError("I'll fail you, no matter what", 
+                            interrupt_validation=True)
+        raise e
+    processors = list(tags)
+    processors[1:1] = [failing_processor] # inserting at position 1 
+    try:
+        b = contexts.BasicContext(*processors)
+        value = b.validate('some contents')
+    except err.ValidationErrorStack as e:
+        assert e[0].value=='<b>'+'some contents'+'</b>'
+
+def test_ValidationErrorStack_has_value_up_to_validation_interruption(tags):
+    # tags are : bold, italic, and underline in that order
+    def failing_processor(value, context):
+        e = err.ValidationError("I'll fail you, no matter what", 
+                            interrupt_validation=True)
+        raise e
+    processors = list(tags)
+    processors[1:1] = [failing_processor] # inserting at position 1 
+    try:
+        b = contexts.BasicContext(*processors)
+        value = b.validate('some contents')
+    except err.ValidationErrorStack as e:
+        assert e.value=='<b>'+'some contents'+'</b>'
+
+def test_ValidationErrorStack_has_final_value_if_no_interruption(tags):
+    # tags are : bold, italic, and underline in that order
+    def failing_processor(value, context):
+        e = err.ValidationError("I'll fail you, no matter what", 
+                            interrupt_validation=False)
+        raise e
+    processors = list(tags)
+    processors[1:1] = [failing_processor] # inserting at position 1 
+    try:
+        b = contexts.BasicContext(*processors)
+        value = b.validate('some contents')
+    except err.ValidationErrorStack as e:
+        assert e.value=='<u><i><b>'+'some contents'+'</b></i></u>'
+
+#def test_validation_interrupted_if_flag_raised_on_error(tags, mocker):
+#    for t in tags:
+#        mocker.patch(t)
+#    def failing_processor(value, context):
+#        e = err.ValidationError("I'll fail you, no matter what", 
+#                            interrupt_validation=False)
+#        raise e
+#    processors = list(tags)
+#    processors[1:1] = [failing_processor] # inserting at position 1 
+#    try:
+#        b = contexts.BasicContext(*processors)
+#        value = b.validate('some contents')
+#    except err.ValidationErrorStack as e:
+#        for t in tags:
+#            assert t.called
+
 
 @pytest.mark.xfail
-def test_basic_context_can_fail_non_basic_types():
+def test_ValidationErrorStack_contains_failing_value_after_validation():
     assert 0
 
-@pytest.mark.xfail
-def test_ValidationError_has_interrupt_validation_attribute():
-    assert 0
-
-@pytest.mark.xfail
-def test_ValidationErrorStack_acts_like_list_on_append():
-    assert 0
-
-@pytest.mark.xfail
-def test_BasicContext_type_check_interrupts_validation_on_failure():
-    assert 0
-
-@pytest.mark.xfail
-def test_runner_stack_interrupts_validation_if_flag_raised_on_error():
-    assert 0

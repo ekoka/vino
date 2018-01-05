@@ -8,10 +8,33 @@ class ValidationError(Exception):
         self.interrupt_validation = interrupt_validation
 
 class ValidationErrorStack(ValidationError):
-    def __append__(self, error):
+
+    @property
+    def errors(self):
         if not hasattr(self, '_errors'):
             self._errors = []
-        self._errors.append(error)
+        return self._errors
+
+    @property
+    def empty(self):
+        return not self.errors
+
+    def clear(self):
+        del self.errors[:]
+
+    def pop(self):
+        self.errors.pop()
+
+    def append(self, error):
+        self.errors.append(error)
+        return self
+
+    def __len__(self):
+        return len(self.errors)
+
+    def __getitem__(self, item):
+        return self.errors[item]
+
 
 
 

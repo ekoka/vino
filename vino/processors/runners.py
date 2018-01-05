@@ -1,4 +1,4 @@
-from ..errors import VinoError
+from .. import errors as err
 class Runner:
     def run(self, *a, **kw):
         raise NotImplementedError()
@@ -31,7 +31,7 @@ class ProcessorRunner(Runner):
         name = (processor.name 
                 if hasattr(processor, 'name') 
                 else repr(processor))
-        raise VinoError('Invalid Processor {}'.format(name))
+        raise err.VinoError('Invalid Processor {}'.format(name))
 
     def run(self, value, context=None):
         return self.processor(value, context)
@@ -59,7 +59,7 @@ class RunnerStack:
         for i, p in enumerate(processors):
             try:
                 runner = ProcessorRunner(p)
-            except VinoError:
+            except err.VinoError:
                 raise
                 # NOTE: this will not be called for Contexts since they now 
                 # mimick Processor's API
@@ -70,9 +70,26 @@ class RunnerStack:
             self.runners.append(runner)
 
     def run(self, value):
+        e_stack = err.ValidationErrorStack('Validation Errors')
         for r in self.runners:
-            value = r.run(value, self.context)
-        return value
+            try:
+                value = r.run(value, self.context)
+            except err.ValidationError as e:
+                self._copy_value_in_err(e, value)
+                e_stack.append(e)
+                if e.interrupt_validation:
+                    break
+        if e_stack.empty:
+            return value
+        self._copy_value_in_err(e_stack, value)
+        raise e_stack
+
+    def _copy_value_in_err(self, e, value):
+        # try to make shallow copy
+        try:
+            e.value = value.copy()
+        except AttributeError:
+            e.value = value
 
     def __len__(self):
         return len(self.runners)
@@ -93,7 +110,7 @@ class SequenceQualifier(Qualifier):
     def set_sequence(self, start, step, stop):
         if is_rangelike(start):
             if not (stop is None is step):
-                raise VinoError(
+                raise err.VinoError(
                     'Cannot mix range object with additional arguments in '
                     'sequence call.')
             start, stop, step = start.start, start.stop, start.step
@@ -106,7 +123,7 @@ class SequenceQualifier(Qualifier):
                 if not is_intlike(s, positive=True):
                     raise TypeError()
             except TypeError:
-                raise VinoError(
+                raise err.VinoError(
                     'Invalid {} value given for sequence: {}'.format(n,s))
 
         return range(start, stop, step)
