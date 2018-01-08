@@ -9,44 +9,41 @@ def context():
     class rv(contexts.VinoContext): pass
     return rv
 
-def test_context_created_without_processor_has_only_one_runner(context):
-    c = context()
-    assert len(c._runners)==1
+class TestBasicContext:
+    def test_empty_context_has_only_one_runner(self):
+        c = contexts.BasicContext()
+        assert len(c._runners)==1
 
-def test_first_runner_in_context_wraps_context_run_method(context, processors):
-    context.run = lambda*a,**kw: 'abc'
-    c = context(*processors)
-    assert c._runners[0].processor() == 'abc'
+    def test_basic_type_processor_returns_value(self, randstr):
+        b = contexts.BasicContext()
+        assert b.validate(randstr)==randstr
 
-def test_basic_context_with_no_added_processors_returns_value(randstr):
-    b = contexts.BasicContext()
-    assert b.validate(randstr)==randstr
+    def test_validate_basic_type(self):
+        b = contexts.BasicContext()
+        b.validate(1)
+        b.validate(1.2)
+        b.validate(None)
+        b.validate("")
+        b.validate("(- . -)")
+        b.validate(False)
+        b.validate(True)
 
-def test_basic_context_can_validate_basic_type():
-    b = contexts.BasicContext()
-    b.validate(1)
-    b.validate(1.2)
-    b.validate(None)
-    b.validate("")
-    b.validate("(- . -)")
-    b.validate(False)
-    b.validate(True)
+    def test_raises_ValidationError_on_invalid_basic_type(self):
+        b = contexts.BasicContext()
+        with pytest.raises(err.ValidationError) as exc:
+            b.validate([])
+        with pytest.raises(err.ValidationError) as exc:
+            b.validate(list('abcdef'))
+        with pytest.raises(err.ValidationError) as exc:
+            b.validate({'a': 'e'})
+        #TODO: what happens with byte type
 
-def test_basic_context_raises_ValidationError_on_invalid_basic_type():
-    b = contexts.BasicContext()
-    with pytest.raises(err.ValidationError) as exc:
-        b.validate([])
-    with pytest.raises(err.ValidationError) as exc:
-        b.validate(list('abcdef'))
-    with pytest.raises(err.ValidationError) as exc:
-        b.validate({'a': 'e'})
-    #TODO: what happens with byte type
-
-def test_BasicContext_executes_all_validations_in_fifo(tags):
-    # tags are : bold, italic, and underline in that order
-    b = contexts.BasicContext(*tags)
-    value = b.validate('some contents')
-    assert value=='<u><i><b>'+'some contents'+'</b></i></u>'
+    def test_executes_all_validations_in_fifo(self, tags, logger):
+        # tags are : bold, italic, and underline in that order
+        logger.info(tags)
+        b = contexts.BasicContext(*tags)
+        value = b.validate('some contents')
+        assert value=='<u><i><b>'+'some contents'+'</b></i></u>'
 
 def test_validation_continues_if_interrupt_flag_not_raised(tags):
     # tags are : bold, italic, and underline in that order

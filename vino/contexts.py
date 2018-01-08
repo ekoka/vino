@@ -1,6 +1,8 @@
 from .errors import VinoError, ValidationError, ValidationErrorStack
 from .processors.runners import RunnerStack
 from . import utils
+from .processors.processors import Processor
+from .qualifiers import ItemQualifierStack
 
 class VinoContext:
     ''' The Context represent the primary scope of influence of a processor.
@@ -12,22 +14,23 @@ class VinoContext:
     def __init__(self, *processors, **kw): 
         self.name = kw.pop('name', None) # name is a keyword-only argument
         # prepend context to list of processors
-        processors = (self,) + processors
+        #processors = (self,) + processors
         self._runners = RunnerStack(self, *processors)
+
+    def validate(self, value):
+        # if we're calling validate to this object then it's the root
+        # object and it needs to run itself
+        # TODO: maybe give it a runner to be consistent
+        # temporarily adding this object to its runner
+        value = self._runners.run(value)
+        return value
 
     def run(self, value, context):
         """ Let's quack like a Processor """
         # default behaviour is to simply return the value untouched
         return value
 
-
-class BasicContext(VinoContext):
-        
-    def validate(self, value):
-        # raises ValidationErrorStack
-        value = self._runners.run(value)
-        return value
-
+class BasicTypeProcessor(Processor):
     def run(self, value, context):
         if (utils.is_str(value) or utils.is_numberlike(value) 
             or utils.is_boolean(value) or value is None):
@@ -37,18 +40,21 @@ class BasicContext(VinoContext):
             'Wrong type provided. Expected Array type.', type(value))
 
 
+class BasicContext(VinoContext):
+
+    def __init__(self, *processors, **kw): 
+        processors = (BasicTypeProcessor(),) + processors
+        super(BasicContext, self).__init__(*processors, **kw)
+
+    def run(self, value, context):
+        return self._runners.run(value) 
         # TODO: handle bytes somehow
         # if utils.is_iterable(value, exclude_dict=False):
         #     raise errors.ValidationError('Expected Basic Type ')
 
 
 
-class ArrayContext(VinoContext):
-
-    def validate(self, value):
-        value = self._runners.run(value)
-        return value
-
+class ArrayTypeProcessor(Processor):
     def run(self, value, context):
         # ensures that value is None or if not set 
         # otherwise ensures that value is set to a non-dict sequence 
@@ -62,43 +68,39 @@ class ArrayContext(VinoContext):
             'Wrong type provided. Expected Array type.', 
             type(value))
 
+class ArrayContext(VinoContext):
+    def __init__(self, *processors, **kw): 
+        processors = (ArrayTypeProcessor(),) + processors
+        super(ArrayContext, self).__init__(*processors, **kw)
 
+    def run(self, value, context):
+        return self._runners.run(value)
 
 class ArrayItemsContext(VinoContext):
 
-    qualifiers = []
+    @property
+    def qualifiers(self):
+        if hasattr(self, '_qualifiers'):
+            return self._qualifiers
+        self._qualifiers = ItemQualifierStack(self)
+        return self._qualifiers
 
-    def run(self, value):
+    def validate(self, value):
+        return self.run(value, self)
+
+    def run(self, value, context):
+        if value is None:
+            return None
+        rv = []
         for i, v in enumerate(value):
             # no qualifiers implies all items qualify
-            if (not self.qualifiers) or self._qualify(i,v):
-                rv.append(self._run_stack(d))
+            if self.qualifiers.empty() or self.qualifiers.qualify(i,v):
+                rv.append(self._runners.run(v))
         return rv
 
-    def _run_stack(self, data):
-        for runner in self.stack:
-            data = runner.run(data)
-        return data
-
-    def _qualify(self, index, data):
-        for q in self.item_qualifiers:
-            if q(index, data):
-                return True
-        return False
-
-    def apply_to(*qualifiers):
-        for q in qualifiers:
-            self.qualifiers.append(self._qualifier(q))
+    def apply_to(self, *qualifiers):
+        self.qualifiers.add(*qualifiers)
         return self
-
-    def _qualifier(qualifier):
-        if utils.is_integer(q):
-            return [q]
-        if utils.is_iterable(q):
-            return list(q)
-        if callable(q):
-            return q
-
 
 
 class ObjectContext(VinoContext): pass
