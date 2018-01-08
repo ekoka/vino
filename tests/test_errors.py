@@ -43,3 +43,7 @@ def test_VEStack_can_be_cleared():
     assert not stack.empty
     stack.clear()
     assert stack.empty
+
+@pytest.mark.skip
+def test_VEStack_when_treated_as_exception_proxies_to_first_error():
+    assert 0

@@ -2,10 +2,10 @@ class VinoError(Exception): pass
 
 class ValidationError(Exception):
     interrupt_validation = False
-    def __init__(self, msg, interrupt_validation=False, *a, **kw): 
-        a = (msg,)+a
-        super(ValidationError, self).__init__(*a, **kw)
-        self.interrupt_validation = interrupt_validation
+    def __init__(self, *a, **kw):
+        # interrupt_validation is a keyword-only arg
+        self.interrupt_validation = kw.pop('interrupt_validation', False)
+        super(ValidationError, self).__init__(*a)
 
 class ValidationErrorStack(ValidationError):
 

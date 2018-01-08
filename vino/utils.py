@@ -28,6 +28,8 @@ def is_iterable(value,
         exclude_dict=True,
         exclude_str=True,
         exclude_bytes=True):
+    if exclude_set and hasattr(value, 'union'):
+        return False
     if not hasattr(value, '__iter__'):
         return False
     if exclude_generator and hasattr(value, 'close'):

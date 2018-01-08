@@ -37,16 +37,16 @@ class ProcessorRunner(Runner):
         return self.processor(value, context)
 
 # NOTE: I'm not sure this is still needed
-class ContextRunner(Runner):
-    def __init__(self, context):
-        self.context = self._valid_context(context)
-
-    def _valid_context(self, context):
-        if hasattr(context, 'validate'):
-            return context
-
-    def run(value, context=None):
-        self.context.validate(value, context)
+#class ContextRunner(Runner):
+#    def __init__(self, context):
+#        self.context = self._valid_context(context)
+#
+#    def _valid_context(self, context):
+#        if hasattr(context, 'validate'):
+#            return context
+#
+#    def run(value, context=None):
+#        self.context.validate(value, context)
 
 class RunnerStack:
     """ A stack of Runners.

@@ -56,7 +56,7 @@ def test_instance_from_inversing_BP_class_has_mirror_value(BP):
 
     #assert not_bp.mirror.value is True
 
-def test_callable_wrapped_by_Required_acquire_clause_attributes(Mandatory):
+def test_callable_wrapped_by_MandatoryClause_acquires_clause_attr(Mandatory):
     M = Mandatory
     @M.adapt
     def someuserdefinedfnc(): pass
@@ -64,7 +64,7 @@ def test_callable_wrapped_by_Required_acquire_clause_attributes(Mandatory):
     assert someuserdefinedfnc.__clause_precedence__==M.__clause_precedence__
     assert someuserdefinedfnc.__clause_mandatory__==M.__clause_mandatory__
 
-def test_processor_wrapped_by_Required_keeps_same_api(Mandatory):
+def test_processor_wrapped_by_MandatoryClause_keeps_same_api(Mandatory):
     M = Mandatory
     @M.adapt
     def userdefinedfnc():

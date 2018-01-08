@@ -2,12 +2,13 @@ import pytest
 import logging
 import random
 from string import ascii_letters, digits
+from vino.errors import ValidationError
 
 @pytest.fixture('session')
 def logger():
-    logger = logging.getLogger('vino')
-    logger.addHandler(logging.FileHandler('logs/codin.log'))
-    return logger
+    rv = logging.getLogger('vino')
+    rv.addHandler(logging.FileHandler('logs/codin.log'))
+    return rv
 
 @pytest.fixture
 def processors():
