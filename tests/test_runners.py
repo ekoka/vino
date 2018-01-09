@@ -68,33 +68,7 @@ def test_if_processor_has_run_method_Runner_wraps_with_function():
     assert r.processor() == 'abc'
     assert r.processor is not x_inst
     assert x_inst.was_called is True
-    
-#def test_RunnerStack_run_method_calls_processors_in_order_of_addition():
-#    length = 5
-#    def create_fnc(i):
-#        return lambda x: 
-#    processors = [create_fnc(i) for i in range(length)]
-#    rs = runners.RunnerStack(processors)
-#
 
-def test_VEStack_contains_all_ValError_raised_by_stack(tags, fails_continue):
-    processes = []
-    for t, f in list(zip(tags, fails_continue)): 
-        processes += t,f
-    rs = runners.RunnerStack(None, *processes)
-    try:
-        rs.run('some value')
-    except err.ValidationErrorStack as es:
-        assert len(es)==len(fails_continue)
-
-def test_VEStack_errors_each_have_value_at_failure_time(tags, fails_continue):
-    processes = []
-    for t, f in list(zip(tags, fails_continue)): 
-        processes += t,f
-    rs = runners.RunnerStack(None, *processes)
-    try:
-        rs.run('some value')
-    except err.ValidationErrorStack as es:
-        assert es[0].value=='<b>some value</b>'
-        assert es[1].value=='<i><b>some value</b></i>'
-        assert es[2].value=='<u><i><b>some value</b></i></u>'
+@pytest.mark.skip
+def test_Runner_calls_fail_function_on_processor_if_set():
+    assert 0

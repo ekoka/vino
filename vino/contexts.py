@@ -61,7 +61,8 @@ class ArrayTypeProcessor(Processor):
         # then attempts to convert it to a list
         if value is None:
             return None
-        if utils.is_iterable(value, exclude_set=True):
+        if utils.is_iterable(value, exclude_set=True, 
+                             exclude_generator=True):
             return list(value)
         # TODO more descriptive message
         raise ValidationError(
@@ -96,14 +97,36 @@ class ArrayItemsContext(VinoContext):
             # no qualifiers implies all items qualify
             if self.qualifiers.empty() or self.qualifiers.qualify(i,v):
                 rv.append(self._runners.run(v))
+            else:
+                rv.append(v)
         return rv
 
     def apply_to(self, *qualifiers):
         self.qualifiers.add(*qualifiers)
         return self
 
+class ObjectTypeProcessor(Processor):
+    def run(self, value, context):
+        # ensures that value is None or if not set 
+        # otherwise ensures that value is set to a non-dict sequence 
+        # then attempts to convert it to a list
+        if value is None:
+            return None
+        try:
+            if utils.is_dict(value):
+                return dict(value)
+        except:
+            pass
+        # TODO more descriptive message
+        raise ValidationError(
+            'Wrong type provided. Expected Object type.', 
+            type(value))
 
-class ObjectContext(VinoContext): pass
+
+class ObjectContext(VinoContext):
+    def __init__(self, *processors, **kw): 
+        processors = (ObjectTypeProcessor(),) + processors
+        super(ObjectContext, self).__init__(*processors, **kw)
 
 class ObjectPropertyContext(VinoContext): pass
  

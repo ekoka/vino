@@ -22,34 +22,49 @@ def is_intlike(i, positive=False):
     except TypeError:
         return False
 
-def is_iterable(value,
-        exclude_generator=False,
-        exclude_set=False,
-        exclude_dict=True,
-        exclude_str=True,
-        exclude_bytes=True):
-    if exclude_set and hasattr(value, 'union'):
+def is_iterable(value, exclude_list=False, exclude_tuple=False,
+        exclude_generator=False, exclude_set=False, exclude_dict=True,
+        exclude_str=True, exclude_bytes=True):
+    if exclude_list and is_list(value):
         return False
-    if not hasattr(value, '__iter__'):
+    if exclude_tuple and is_tuple(value):
         return False
-    if exclude_generator and hasattr(value, 'close'):
+    if exclude_set and is_set(value):
         return False
-    if exclude_dict and hasattr(value, 'get'):
+    if exclude_generator and is_generator(value):
         return False
-    if exclude_str and hasattr(value, 'encode'):
+    if exclude_dict and is_dict(value):
         return False
-    if exclude_bytes and hasattr(value, 'decode'):
+    if exclude_str and is_str(value):
+        return False
+    if exclude_bytes and is_bytes(value):
         return False
     return True
 
-def is_boolean(value):
-    return value in (True, False)
+def is_list(value):
+    return hasattr(value, '__iter__') and hasattr(value, 'reverse')
+
+def is_tuple(value):
+    return (hasattr(value, '__iter__') and not hasattr(value, 'append')
+            and not hasattr('capitalize'))
+
+def is_set(value):
+    return hasattr(value, '__iter__') and hasattr(value, 'union')
+
+def is_generator(value):
+    return hasattr(value, '__iter__') and hasattr(value, 'close')
+
+def is_dict(value):
+    return hasattr(value, '__iter__') and hasattr(value, 'get')
 
 def is_str(value):
-    return hasattr(value, 'encode')
+    return hasattr(value, '__iter__') and hasattr(value, 'encode')
 
-def is_bytestring(value):
-    return hasattr(value, 'decode')
+def is_bytes(value):
+    return hasattr(value, '__iter__') and hasattr(value, 'decode')
+
+def is_boolean(value):
+    return value in (True, False)
 
 def to_str(value):
     if is_str(value):
