@@ -4,25 +4,28 @@ import pytest
 
 class TestObjectContext:
 
-    def test_validating_empty_object_returns_empty_obj(self):
+    def test_validation_rv_of_empty_object_is_empty_obj(self):
         c = contexts.ObjectContext()
         rv = c.validate({})
         assert rv=={}
 
-    def test_validating_null_object_returns_null_by_default(self):
+    def test_validation_rv_of_null_object_is_null_by_default(self):
         c = contexts.ObjectContext()
         rv = c.validate(None)
         assert rv is None
 
-    def test_validation_return_value_has_same_values(self):
+    def test_validation_rv_has_same_values(self):
         c = contexts.ObjectContext()
         value = {'a':23, 'b':12}
         rv = c.validate(value)
         assert rv==value
 
-    def test_validation_return_value_is_not_original_object(self):
+    def test_validation_rv_is_not_original_object(self):
         c = contexts.ObjectContext()
         value = {'a':23, 'b':12}
+        rv = c.validate(value)
+        assert rv is not value 
+        value = {}
         rv = c.validate(value)
         assert rv is not value 
 
@@ -103,5 +106,6 @@ class TestObjectContext:
 
         rv = c.validate(d)
         assert rv['key1']=='<u><i><b>abc</b></i></u>'
+
 
 

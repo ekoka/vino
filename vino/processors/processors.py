@@ -1,5 +1,9 @@
 from ..utils import _undef
+from .. import errors as err
+from .. import utils
 import functools
+
+class Processor: pass
 
 def ismissing(data=_undef):
     return data is _empty
@@ -23,6 +27,88 @@ def append_allowempty(context):
 def append_allownull(context):
     if not context.has_allownull:
         context.append_processor(allownull)
+
+class BasicTypeProcessor(Processor):
+    def run(self, data, context):
+        if (utils.is_str(data) or utils.is_numberlike(data) 
+            or utils.is_boolean(data) or data is None):
+            return data
+        # TODO more descriptive message
+        raise err.ValidationError(
+            'Wrong type provided. Expected Array type.', type(data))
+
+
+class ArrayTypeProcessor(Processor):
+    def run(self, data, context):
+        # ensures that data is None or if not set 
+        # otherwise ensures that data is set to a non-dict sequence 
+        # then attempts to convert it to a list
+        if data is None:
+            return None
+        if utils.is_iterable(data, exclude_set=True, 
+                             exclude_generator=True):
+            return list(data)
+        # TODO more descriptive message
+        raise err.ValidationError(
+            'Wrong type provided. Expected Array type.', 
+            type(data))
+
+
+class ObjectTypeProcessor(Processor):
+    def run(self, data, context):
+        # ensures that data is None or if not set 
+        # otherwise ensures that data is set to a non-dict sequence 
+        # then attempts to convert it to a list
+        if data is None:
+            return None
+        try:
+            if utils.is_dict(data):
+                return dict(data)
+        except:
+            pass
+        # TODO more descriptive message
+        raise err.ValidationError(
+            'Wrong type provided. Expected Object type.', 
+            type(data))
+
+
+def is_basic_type(data, context):
+    if (utils.is_str(data) or utils.is_numberlike(data) 
+        or utils.is_boolean(data) or data is None):
+        return data
+    # TODO more descriptive message
+    raise err.ValidationError(
+        'Wrong type provided. Expected Array type.', type(data))
+
+
+def is_array_type(data, context):
+    # ensures that data is None or if not set 
+    # otherwise ensures that data is set to a non-dict sequence 
+    # then attempts to convert it to a list
+    if data is None:
+        return None
+    if utils.is_iterable(data, exclude_set=True, 
+                            exclude_generator=True):
+        return list(data)
+    # TODO more descriptive message
+    raise err.ValidationError(
+        'Wrong type provided. Expected Array type.', 
+        type(data))
+
+
+def is_object_type(data, context):
+    if data is None:
+        return None
+    try:
+        if utils.is_dict(data):
+            return dict(data)
+    except:
+        pass
+    # TODO more descriptive message
+    raise err.ValidationError(
+        'Wrong type provided. Expected Object type.', 
+        type(data))
+
 
 class polymorphic(object):
 
@@ -55,7 +141,6 @@ class BooleanProcessorMeta(type):
     def vino_init(cls, *a, **kw):
         return cls(*a, **kw)
 
-class Processor: pass
 
 class ProcessorBatch(Processor):
     """ Packs a sequence of processors to apply to a group of items.

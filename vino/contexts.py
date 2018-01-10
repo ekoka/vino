@@ -1,7 +1,7 @@
 from .errors import VinoError, ValidationError, ValidationErrorStack
 from .processors.runners import RunnerStack
 from . import utils
-from .processors.processors import Processor
+from .processors import processors as proc
 from .qualifiers import ItemQualifierStack
 
 class VinoContext:
@@ -30,20 +30,12 @@ class VinoContext:
         # default behaviour is to simply return the data untouched
         return data
 
-class BasicTypeProcessor(Processor):
-    def run(self, data, context):
-        if (utils.is_str(data) or utils.is_numberlike(data) 
-            or utils.is_boolean(data) or data is None):
-            return data
-        # TODO more descriptive message
-        raise ValidationError(
-            'Wrong type provided. Expected Array type.', type(data))
 
 
 class BasicContext(VinoContext):
 
     def __init__(self, *processors, **kw): 
-        processors = (BasicTypeProcessor(),) + processors
+        processors = (proc.is_basic_type,) + processors
         super(BasicContext, self).__init__(*processors, **kw)
 
     def run(self, data, context):
@@ -53,25 +45,9 @@ class BasicContext(VinoContext):
         #     raise errors.ValidationError('Expected Basic Type ')
 
 
-
-class ArrayTypeProcessor(Processor):
-    def run(self, data, context):
-        # ensures that data is None or if not set 
-        # otherwise ensures that data is set to a non-dict sequence 
-        # then attempts to convert it to a list
-        if data is None:
-            return None
-        if utils.is_iterable(data, exclude_set=True, 
-                             exclude_generator=True):
-            return list(data)
-        # TODO more descriptive message
-        raise ValidationError(
-            'Wrong type provided. Expected Array type.', 
-            type(data))
-
 class ArrayContext(VinoContext):
     def __init__(self, *processors, **kw): 
-        processors = (ArrayTypeProcessor(),) + processors
+        processors = (proc.is_array_type,) + processors
         super(ArrayContext, self).__init__(*processors, **kw)
 
     def run(self, data, context):
@@ -105,27 +81,10 @@ class ArrayItemsContext(VinoContext):
         self.qualifiers.add(*qualifiers)
         return self
 
-class ObjectTypeProcessor(Processor):
-    def run(self, data, context):
-        # ensures that data is None or if not set 
-        # otherwise ensures that data is set to a non-dict sequence 
-        # then attempts to convert it to a list
-        if data is None:
-            return None
-        try:
-            if utils.is_dict(data):
-                return dict(data)
-        except:
-            pass
-        # TODO more descriptive message
-        raise ValidationError(
-            'Wrong type provided. Expected Object type.', 
-            type(data))
-
 
 class ObjectContext(VinoContext):
     def __init__(self, *processors, **kw): 
-        processors = (ObjectTypeProcessor(),) + processors
+        processors = (proc.is_object_type,) + processors
         super(ObjectContext, self).__init__(*processors, **kw)
 
 class ObjectMembersContext(VinoContext):
