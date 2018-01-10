@@ -51,9 +51,9 @@ class TestValidationErrorStack:
         try:
             rs.run('some value')
         except err.ValidationErrorStack as es:
-            assert es[0].value=='<b>some value</b>'
-            assert es[1].value=='<i><b>some value</b></i>'
-            assert es[2].value=='<u><i><b>some value</b></i></u>'
+            assert es[0].data=='<b>some value</b>'
+            assert es[1].data=='<i><b>some value</b></i>'
+            assert es[2].data=='<u><i><b>some value</b></i></u>'
 
     def test_empty_flag_true_if_has_errors(self):
         stack = err.ValidationErrorStack('stack')

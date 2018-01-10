@@ -1,15 +1,15 @@
 from ..utils import _undef
 import functools
 
-def ismissing(value=_undef):
-    return value is _empty
+def ismissing(data=_undef):
+    return data is _empty
 
-def isempty(value=_undef):
+def isempty(data=_undef):
     empty_values = ['', None, [], {}, tuple(), set()]
-    return value in empty_values
+    return data in empty_values
 
-def isnull(value=_undef):
-    return value is None
+def isnull(data=_undef):
+    return data is None
 
 def prepend_required(context):
     # TODO: import required her
@@ -47,7 +47,7 @@ class polymorphic(object):
 class BooleanProcessorMeta(type):
     def __invert__(cls):
         """ this allows `BooleanProcessor` classes to return an instance of
-        themselves with a value set to the opposite when the bitwise `~` is
+        themselves with a data set to the opposite when the bitwise `~` is
         applied on them.
         """
         return cls(not cls.__default__)
@@ -87,7 +87,7 @@ class ProcessorBatch(Processor):
         """
         self.qualifiers = qualifiers
 
-    def run(self, value):
+    def run(self, data):
         pass
 
 class MandatoryClause:
@@ -123,15 +123,15 @@ class ProcessorAdapter:
 class BooleanProcessor(metaclass=BooleanProcessorMeta):
     __default__ = True
 
-    def __init__(self, value=_undef, mirror=_undef):
-        if value is _undef:
-            value = self.__class__.__default__
-        self.value = bool(value)
+    def __init__(self, data=_undef, mirror=_undef):
+        if data is _undef:
+            data = self.__class__.__default__
+        self.data = bool(data)
         self._register_mirror(mirror)
         
     def _register_mirror(self, mirror=_undef):
         if mirror is _undef:
-            mirror = self.__class__(not self.value, self)
+            mirror = self.__class__(not self.data, self)
         self.mirror = mirror
 
 

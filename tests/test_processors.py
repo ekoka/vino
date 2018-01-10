@@ -17,20 +17,20 @@ def Mandatory():
 
 def test_value_set_on_BP_instance_cast_to_bool(BP):
     for i in [0, None, [], {}, '']:
-        assert BP(i).value is False
+        assert BP(i).data is False
     for i in range(9):
         rnd = random.randint(1, 100)
-        assert BP(rnd).value is True
+        assert BP(rnd).data is True
 
 def test_instance_of_BP_created_without_value_sets_it_to_default(BP, logger):
     for i in range(30):
         BP.__default__ = [True, False][random.randint(0, 1)]
         rq = BP()
-        assert rq.value==BP.__default__
+        assert rq.data==BP.__default__
 
 def test_inversing_BP_class_returns_instance_with_value_set_to_False(BP):
     not_bp = ~BP
-    assert not_bp.value is False
+    assert not_bp.data is False
 
 def test_instance_of_BP_created_with_a_mirror_instance(BP):
     bp = BP()
@@ -40,9 +40,9 @@ def test_mirror_instances_have_opposite_bool_values(BP):
     rnd = [random.randint(1, 100) for i in range(9)]
     for i in [0, None, [], {}, '']+rnd:
         r = BP(i)
-        assert isinstance(r.value, bool) 
-        assert isinstance(r.mirror.value, bool)
-        assert r.value is not r.mirror.value
+        assert isinstance(r.data, bool) 
+        assert isinstance(r.mirror.data, bool)
+        assert r.data is not r.mirror.data
 
 def test_inversing_BP_class_returns_instance_of_class(BP):
     not_bp = ~BP
@@ -50,11 +50,11 @@ def test_inversing_BP_class_returns_instance_of_class(BP):
 
 def test_instance_from_inversing_BP_class_has_mirror_value(BP):
     not_bp = ~BP
-    assert isinstance(not_bp.value, bool) 
+    assert isinstance(not_bp.data, bool) 
     assert isinstance(BP.__default__, bool)
-    assert not_bp.value is not BP.__default__
+    assert not_bp.data is not BP.__default__
 
-    #assert not_bp.mirror.value is True
+    #assert not_bp.mirror.data is True
 
 def test_callable_wrapped_by_MandatoryClause_acquires_clause_attr(Mandatory):
     M = Mandatory

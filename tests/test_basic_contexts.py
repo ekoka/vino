@@ -38,9 +38,8 @@ class TestBasicContext:
             b.validate({'a': 'e'})
         #TODO: what happens with byte type
 
-    def test_executes_all_validations_in_fifo(self, tags, logger):
+    def test_executes_all_validations_in_fifo(self, tags):
         # tags are : bold, italic, and underline in that order
-        logger.info(tags)
         b = contexts.BasicContext(*tags)
         value = b.validate('some contents')
         assert value=='<u><i><b>'+'some contents'+'</b></i></u>'
@@ -56,7 +55,7 @@ def test_validation_continues_if_interrupt_flag_not_raised(tags):
         b = contexts.BasicContext(*processors)
         value = b.validate('some contents')
     except err.ValidationErrorStack as e:
-        assert e.value=='<u><i><b>'+'some contents'+'</b></i></u>'
+        assert e.data=='<u><i><b>'+'some contents'+'</b></i></u>'
 
 def test_ValidationError_contains_failing_value_after_validation(tags):
     # tags are : bold, italic, and underline in that order
@@ -70,7 +69,7 @@ def test_ValidationError_contains_failing_value_after_validation(tags):
         b = contexts.BasicContext(*processors)
         value = b.validate('some contents')
     except err.ValidationErrorStack as e:
-        assert e[0].value=='<b>'+'some contents'+'</b>'
+        assert e[0].data=='<b>'+'some contents'+'</b>'
 
 def test_ValidationErrorStack_has_value_up_to_validation_interruption(tags):
     # tags are : bold, italic, and underline in that order
@@ -84,7 +83,7 @@ def test_ValidationErrorStack_has_value_up_to_validation_interruption(tags):
         b = contexts.BasicContext(*processors)
         value = b.validate('some contents')
     except err.ValidationErrorStack as e:
-        assert e.value=='<b>'+'some contents'+'</b>'
+        assert e.data=='<b>'+'some contents'+'</b>'
 
 def test_ValidationErrorStack_has_final_value_if_no_interruption(tags):
     # tags are : bold, italic, and underline in that order
@@ -98,15 +97,15 @@ def test_ValidationErrorStack_has_final_value_if_no_interruption(tags):
         b = contexts.BasicContext(*processors)
         value = b.validate('some contents')
     except err.ValidationErrorStack as e:
-        assert e.value=='<u><i><b>'+'some contents'+'</b></i></u>'
+        assert e.data=='<u><i><b>'+'some contents'+'</b></i></u>'
 
 def test_validation_interrupted_if_flag_raised_on_error(mocker):
     def failing_processor(value, context):
         e = err.ValidationError(
             "I'll fail you, no matter what", interrupt_validation=True)
         raise e
-    #mk = mocker.MagicMock(spec=[])
-    mk = mocker.MagicMock()
+    #mk = mocker.MagicMock() # probably better to declare some specs 
+    mk = mocker.MagicMock(spec=['run'])
     processors = [failing_processor, mk]
     try:
         b = contexts.BasicContext(*processors)
@@ -122,8 +121,8 @@ def test_validation_proceeds_if_flag_not_raised_on_error(mocker):
         raise e
     # we either need to specify spec to restrict the mock's public api 
     # or test for `mock.run.called`
-    #mk = mocker.MagicMock(spec=[]) 
-    mk = mocker.MagicMock() 
+    #mk = mocker.MagicMock() # probably better to declare some specs 
+    mk = mocker.MagicMock(spec=['run', 'vino_init']) 
     mk.vino_init.return_value = mk
     processors = [failing_processor, mk]
     try:

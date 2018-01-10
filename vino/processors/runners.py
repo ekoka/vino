@@ -1,4 +1,6 @@
+from .. utils import _undef
 from .. import errors as err
+
 class Runner:
     def run(self, *a, **kw):
         raise NotImplementedError()
@@ -18,9 +20,12 @@ class ProcessorRunner(Runner):
         processor its construction is simply delayed and a call to `init is
         made here.
         """
-        if hasattr(processor, 'vino_init'): 
+        try: 
             # calling an initializer if any
             processor = processor.vino_init()
+        except AttributeError:
+            pass
+        self.name = getattr(processor, 'name', None)
         self.processor = self._valid_processor(processor)
 
     def _valid_processor(self, processor):
@@ -28,13 +33,12 @@ class ProcessorRunner(Runner):
             return lambda *a, **kw: processor.run(*a, **kw)
         if callable(processor):
             return processor
-        name = (processor.name 
-                if hasattr(processor, 'name') 
-                else repr(processor))
+        name = self.name or repr(processor)
         raise err.VinoError('Invalid Processor {}'.format(name))
 
-    def run(self, value, context=None):
-        return self.processor(value, context)
+    def run(self, data, context=None):
+        return self.processor(data, context)
+
 
 # NOTE: I'm not sure this is still needed
 #class ContextRunner(Runner):
@@ -59,6 +63,16 @@ class RunnerStack:
         for i, p in enumerate(processors):
             try:
                 runner = ProcessorRunner(p)
+                # TODO: change the isinstance to make the API more flexible
+                # and duck-typable.
+                from ..contexts import ObjectContext
+                if runner.name and not isinstance(context, ObjectContext):
+                    raise err.VinoError('The context enclosing {} does not '
+                                        'appear to be an Object context, yet '
+                                        '{} is declared with a name.'.format(
+                                        p, p))
+                
+
             except err.VinoError:
                 raise
                 # NOTE: this will not be called for Contexts since they now 
@@ -69,27 +83,48 @@ class RunnerStack:
                 # check that the object has 
             self.runners.append(runner)
 
-    def run(self, value):
+    def run(self, data):
         e_stack = err.ValidationErrorStack('Validation Errors')
         for r in self.runners:
             try:
-                value = r.run(value, self.context)
+                if r.name:
+                    """ If it has a name it's implied that its parent context
+                    is an Object and that the data should be subscriptable.
+                    """
+                    try:
+                        # changing context
+                        value = data.get(r.name, _undef)
+                        data[r.name] = r.run(value, self.context)
+                    except AttributeError as e:
+                        """ The attribute was not found on the data """
+                        raise err.ValidationError(
+                            'Could not find  "{}": {}'
+                                .format(r.name, ))
+                    except TypeError as e:
+                        """ We're working from the wrong data type. How did
+                        we get here?"""
+                        raise err.ValidationError(
+                            ' "{}": {}'
+                                .format(r.name, ))
+                else:
+                    value = data
+                    data = r.run(value, self.context)
             except err.ValidationError as e:
-                self._copy_value_in_err(e, value)
+                self._copy_data_in_err(e, data)
                 e_stack.append(e)
                 if e.interrupt_validation:
                     break
         if e_stack.empty:
-            return value
-        self._copy_value_in_err(e_stack, value)
+            return data
+        self._copy_data_in_err(e_stack, data)
         raise e_stack
 
-    def _copy_value_in_err(self, e, value):
+    def _copy_data_in_err(self, e, data):
         # try to make shallow copy
         try:
-            e.value = value.copy()
+            e.data = data.copy()
         except AttributeError:
-            e.value = value
+            e.data = data
 
     def __len__(self):
         return len(self.runners)
@@ -97,51 +132,4 @@ class RunnerStack:
     def __getitem__(self, index):
         return self.runners[index]
 
-class Qualifier:
-    def qualify(self, item, index=None): pass
 
-
-class SequenceQualifier(Qualifier):
-
-    def __init__(self, start=0, step=None, stop=None):
-        """ specifies a range of items to qualify """
-        self. items = self.set_sequence(start, step, stop)
-
-    def set_sequence(self, start, step, stop):
-        if is_rangelike(start):
-            if not (stop is None is step):
-                raise err.VinoError(
-                    'Cannot mix range object with additional arguments in '
-                    'sequence call.')
-            start, stop, step = start.start, start.stop, start.step
-        elif is_listlike(start): # we don't want no generators!
-            rv = self._list_to_range(start, step)
-            
-        for n,s in dict(start=start, stop=stop, step=step):
-            try:
-                s = abs(s)-1 if n=='step' else s
-                if not is_intlike(s, positive=True):
-                    raise TypeError()
-            except TypeError:
-                raise err.VinoError(
-                    'Invalid {} value given for sequence: {}'.format(n,s))
-
-        return range(start, stop, step)
-
-    def __invert__(self):
-        """ switch between qualifier and disqualifier """
-        _current = self._qualifier_fnc
-        self._qualifier_fnc = {
-            self._qualify: self._disqualify,
-            self._disqualify:self._qualify}[_current]
-        return self
-
-    def _qualify(self, *a, **kw):
-        pass
-
-    _qualifier_fnc = _qualify
-
-    def _disqualify(self, *a, **kw):
-        pass
-
-seq = sequence = SequenceQualifier

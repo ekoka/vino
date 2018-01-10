@@ -17,27 +17,27 @@ class VinoContext:
         #processors = (self,) + processors
         self._runners = RunnerStack(self, *processors)
 
-    def validate(self, value):
+    def validate(self, data):
         # if we're calling validate to this object then it's the root
         # object and it needs to run itself
         # TODO: maybe give it a runner to be consistent
         # temporarily adding this object to its runner
-        value = self._runners.run(value)
-        return value
+        data = self._runners.run(data)
+        return data
 
-    def run(self, value, context):
+    def run(self, data, context):
         """ Let's quack like a Processor """
-        # default behaviour is to simply return the value untouched
-        return value
+        # default behaviour is to simply return the data untouched
+        return data
 
 class BasicTypeProcessor(Processor):
-    def run(self, value, context):
-        if (utils.is_str(value) or utils.is_numberlike(value) 
-            or utils.is_boolean(value) or value is None):
-            return value
+    def run(self, data, context):
+        if (utils.is_str(data) or utils.is_numberlike(data) 
+            or utils.is_boolean(data) or data is None):
+            return data
         # TODO more descriptive message
         raise ValidationError(
-            'Wrong type provided. Expected Array type.', type(value))
+            'Wrong type provided. Expected Array type.', type(data))
 
 
 class BasicContext(VinoContext):
@@ -46,36 +46,36 @@ class BasicContext(VinoContext):
         processors = (BasicTypeProcessor(),) + processors
         super(BasicContext, self).__init__(*processors, **kw)
 
-    def run(self, value, context):
-        return self._runners.run(value) 
+    def run(self, data, context):
+        return self._runners.run(data) 
         # TODO: handle bytes somehow
-        # if utils.is_iterable(value, exclude_dict=False):
+        # if utils.is_iterable(data, exclude_dict=False):
         #     raise errors.ValidationError('Expected Basic Type ')
 
 
 
 class ArrayTypeProcessor(Processor):
-    def run(self, value, context):
-        # ensures that value is None or if not set 
-        # otherwise ensures that value is set to a non-dict sequence 
+    def run(self, data, context):
+        # ensures that data is None or if not set 
+        # otherwise ensures that data is set to a non-dict sequence 
         # then attempts to convert it to a list
-        if value is None:
+        if data is None:
             return None
-        if utils.is_iterable(value, exclude_set=True, 
+        if utils.is_iterable(data, exclude_set=True, 
                              exclude_generator=True):
-            return list(value)
+            return list(data)
         # TODO more descriptive message
         raise ValidationError(
             'Wrong type provided. Expected Array type.', 
-            type(value))
+            type(data))
 
 class ArrayContext(VinoContext):
     def __init__(self, *processors, **kw): 
         processors = (ArrayTypeProcessor(),) + processors
         super(ArrayContext, self).__init__(*processors, **kw)
 
-    def run(self, value, context):
-        return self._runners.run(value)
+    def run(self, data, context):
+        return self._runners.run(data)
 
 class ArrayItemsContext(VinoContext):
 
@@ -86,14 +86,14 @@ class ArrayItemsContext(VinoContext):
         self._qualifiers = ItemQualifierStack(self)
         return self._qualifiers
 
-    def validate(self, value):
-        return self.run(value, self)
+    def validate(self, data):
+        return self.run(data, self)
 
-    def run(self, value, context):
-        if value is None:
+    def run(self, data, context):
+        if data is None:
             return None
         rv = []
-        for i, v in enumerate(value):
+        for i, v in enumerate(data):
             # no qualifiers implies all items qualify
             if self.qualifiers.empty() or self.qualifiers.qualify(i,v):
                 rv.append(self._runners.run(v))
@@ -106,21 +106,21 @@ class ArrayItemsContext(VinoContext):
         return self
 
 class ObjectTypeProcessor(Processor):
-    def run(self, value, context):
-        # ensures that value is None or if not set 
-        # otherwise ensures that value is set to a non-dict sequence 
+    def run(self, data, context):
+        # ensures that data is None or if not set 
+        # otherwise ensures that data is set to a non-dict sequence 
         # then attempts to convert it to a list
-        if value is None:
+        if data is None:
             return None
         try:
-            if utils.is_dict(value):
-                return dict(value)
+            if utils.is_dict(data):
+                return dict(data)
         except:
             pass
         # TODO more descriptive message
         raise ValidationError(
             'Wrong type provided. Expected Object type.', 
-            type(value))
+            type(data))
 
 
 class ObjectContext(VinoContext):
@@ -128,6 +128,43 @@ class ObjectContext(VinoContext):
         processors = (ObjectTypeProcessor(),) + processors
         super(ObjectContext, self).__init__(*processors, **kw)
 
-class ObjectPropertyContext(VinoContext): pass
- 
-class StreamContext(VinoContext): pass
+class ObjectMembersContext(VinoContext):
+    def validate(self, data):
+        return self.run(data, self)
+
+    def run(self, data, context):
+        """
+        - if runners map to members iterate through them first and validate each
+        - elif qualifiers are set, iterate through them if list of keys and apply
+        runners to each.
+        - if 
+        """
+        if data is None:
+            return None
+
+        for r in self._runners:
+            if self.qualifiers.empty() or self.qualifiers.qualify():
+                pass
+        rv = {}
+        for k, v in data.items():
+            # no qualifiers implies all items qualify
+            if self.qualifiers.empty() or self.qualifiers.qualify(k,v):
+                rv[k] = self._runners.run(v)
+            else:
+                rv[k] = v
+        return rv
+
+    #def run(self, data, context):
+    #    if data is None:
+    #        return None
+    #    rv = {}
+    #    for k, v in data.items():
+    #        # no qualifiers implies all items qualify
+    #        if self.qualifiers.empty() or self.qualifiers.qualify(k,v):
+    #            rv[k] = self._runners.run(v)
+    #        else:
+    #            rv[k] = v
+    #    return rv
+
+class StreamContext: pass
+class UnspecifiedContext: pass
