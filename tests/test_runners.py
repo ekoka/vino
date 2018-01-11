@@ -95,3 +95,13 @@ class TestRunnerStack:
         c = contexts.ObjectContext(p)
         assert len(c._runners)==2
 
+@pytest.mark.skip
+def test_indexed_processor_or_context_outside_array_raises_error():
+    # for RunnerStack
+    assert 0
+
+@pytest.mark.skip
+def test_named_processor_or_context_outside_object_raises_error():
+    # for RunnerStack
+    assert 0
+

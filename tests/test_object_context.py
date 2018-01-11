@@ -108,4 +108,12 @@ class TestObjectContext:
         assert rv['key1']=='<u><i><b>abc</b></i></u>'
 
 
+@pytest.mark.skip
+def test_applying_properties_to_array_bound_context_raises_error():
+    assert 0
+
+@pytest.mark.skip
+def test_applying_indexes_to_object_bound_context_raises_error():
+    assert 0
+
 

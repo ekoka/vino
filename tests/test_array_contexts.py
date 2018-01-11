@@ -129,8 +129,12 @@ class TestArrayItemContext:
 
     @pytest.mark.skip
     def test_can_qualify_a_single_item(self):
-        assert False
+        assert 0
 
     @pytest.mark.skip
     def test_can_have_multiple_qualifiers(self):
-        assert False
+        assert 0
+
+    @pytest.mark.skip
+    def test_items_are_processed_by_index_not_by_qualifiers_orders():
+        assert 0
