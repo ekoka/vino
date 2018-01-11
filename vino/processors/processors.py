@@ -30,56 +30,24 @@ def append_allownull(context):
 
 class BasicTypeProcessor(Processor):
     def run(self, data, context):
-        if (utils.is_str(data) or utils.is_numberlike(data) 
-            or utils.is_boolean(data) or data is None):
-            return data
-        # TODO more descriptive message
-        raise err.ValidationError(
-            'Wrong type provided. Expected Array type.', type(data))
-
+        return is_basic_type(data, context)
 
 class ArrayTypeProcessor(Processor):
     def run(self, data, context):
-        # ensures that data is None or if not set 
-        # otherwise ensures that data is set to a non-dict sequence 
-        # then attempts to convert it to a list
-        if data is None:
-            return None
-        if utils.is_iterable(data, exclude_set=True, 
-                             exclude_generator=True):
-            return list(data)
-        # TODO more descriptive message
-        raise err.ValidationError(
-            'Wrong type provided. Expected Array type.', 
-            type(data))
-
+        return is_array_type(data, context)
 
 class ObjectTypeProcessor(Processor):
     def run(self, data, context):
-        # ensures that data is None or if not set 
-        # otherwise ensures that data is set to a non-dict sequence 
-        # then attempts to convert it to a list
-        if data is None:
-            return None
-        try:
-            if utils.is_dict(data):
-                return dict(data)
-        except:
-            pass
-        # TODO more descriptive message
-        raise err.ValidationError(
-            'Wrong type provided. Expected Object type.', 
-            type(data))
-
+        return is_object_type(data, context)
 
 def is_basic_type(data, context):
+    # TODO: handle bytes somehow
     if (utils.is_str(data) or utils.is_numberlike(data) 
         or utils.is_boolean(data) or data is None):
         return data
     # TODO more descriptive message
     raise err.ValidationError(
         'Wrong type provided. Expected Array type.', type(data))
-
 
 def is_array_type(data, context):
     # ensures that data is None or if not set 
@@ -95,7 +63,6 @@ def is_array_type(data, context):
         'Wrong type provided. Expected Array type.', 
         type(data))
 
-
 def is_object_type(data, context):
     if data is None:
         return None
@@ -108,7 +75,6 @@ def is_object_type(data, context):
     raise err.ValidationError(
         'Wrong type provided. Expected Object type.', 
         type(data))
-
 
 class polymorphic(object):
 

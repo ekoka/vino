@@ -105,3 +105,26 @@ def test_named_processor_or_context_outside_object_raises_error():
     # for RunnerStack
     assert 0
 
+@pytest.mark.skip
+def test_runner_can_only_have_one_processor():
+    assert 0
+
+@pytest.mark.skip
+def test_error_raised_in_qualifier_run_should_propagate_to_runner_stack():
+    assert 0
+
+@pytest.mark.skip
+def test_cannot_specify_qualifier_without_previous_processor():
+    assert 0
+
+@pytest.mark.skip
+def test_processor_given_to_stack_as_processor_qualifiers_tuple():
+    assert 0
+
+@pytest.mark.skip
+def test_runner_with_qualifiers_set_to_False_closes_off_qualifier():
+    assert 0
+
+@pytest.mark.skip
+def test_making_successive_qualifier_applications_merges_qualifiers():
+    assert 0

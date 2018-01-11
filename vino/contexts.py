@@ -2,58 +2,125 @@ from .errors import VinoError, ValidationError, ValidationErrorStack
 from .processors.runners import RunnerStack
 from . import utils
 from .processors import processors as proc
-from .qualifiers import ItemQualifierStack
+from .qualifiers import ItemQualifierStack, MemberQualifierStack
 
-class VinoContext:
+class Context:
     ''' The Context represent the primary scope of influence of a processor.
     Basic JSON elements (number, string, boolean, null) have a single context,
     within which the processors declared can influence the data. Array and
-    Object elements each have two scopes, one for the constructs themselves
-    and one for their items or properties.
+    Object elements each can have one or more scopes. The primary scope is for
+    the constructs themselves, while their items or properties are handled in
+    sub-scopes.
     '''
-    def __init__(self, *processors, **kw): 
-        self.name = kw.pop('name', None) # name is a keyword-only argument
+    def __init__(self, *processors):
+        """ The initializer doesn't do anything other than providing some
+        convenience for adding processors at declaration time.
+        """
         # prepend context to list of processors
         #processors = (self,) + processors
-        self._runners = RunnerStack(self, *processors)
+        self.add(*processors)
+
+    def add(self, *processors):
+        """ add processors """
+        def _tuplefy(p):
+            try: 
+                return tuple(p):
+            except TypeError as e:
+                return (p, None)
+        processors = (_tuplefy(p) for p in processors)
+        self.runners.add(*processors)
+
+    @property
+    def runners(self):
+        if not hasattr(self, '_runners'):
+            self._runners = RunnerStack(self)
+        return self._runners
 
     def validate(self, data):
-        # if we're calling validate to this object then it's the root
-        # object and it needs to run itself
-        # TODO: maybe give it a runner to be consistent
-        # temporarily adding this object to its runner
-        data = self._runners.run(data)
-        return data
+        """ This method is typically called as an entry point for a root
+        Context object. When a Context is a subset part of another Context, its
+        `run()` method is called instead by a Runner, receiving all necessary
+        data and metadata to apply its processes on the relevant part of it.
+        """
+        return self.run(data, self)
 
     def run(self, data, context):
         """ Let's quack like a Processor """
-        # default behaviour is to simply return the data untouched
-        return data
+        # default behaviour is to simply return a copy of the data
+        return self.runners.run(data)
+
+    def apply_to(self):
+        raise NotImplementedError(
+            '`Context.apply_to` is a specialty property that should be '
+            'implemented in a subclass of `Context`.')
+
+    #def run(self, data, context):
+    #    if data is None:
+    #        return None
+    #    rv = []
+    #    for i, v in enumerate(data):
+    #        # no qualifiers implies all items qualify
+    #        if self.qualifier and (self.qualifiers.empty() 
+    #                               or self.qualifiers.qualify(i,v)):
+    #            rv.append(self._runners.run(v))
+    #        else:
+    #            rv.append(v)
+    #    return rv
+
+    #def indexes(self, *qualifiers):
+    #    if not self.member_qualifiers.empty()::
+    #        raise err.VinoError(
+    #            'Attempt at using a Context as Array bound, '
+    #            'that was previously declared as Object bound. '
+    #            'Context cannot belong to both Object and Array '
+    #            'at the same time.')
+    #    self.item_qualifiers.add(*qualifiers)
+    #    return self
+
+    #def attributes(self, *qualifiers):
+    #    if not self.item_qualifiers.empty()::
+    #        raise err.VinoError(
+    #            'Attempt at using a Context as Object bound, '
+    #            'that was previously declared as Array bound. '
+    #            'Context cannot belong to both Object and Array '
+    #            'at the same time.')
+    #    self.member_qualifiers.add(*qualifiers)
+    #    return self
+
+    # aliasing
+    indices = indexes
+    members = properties = attributes
+
+class BasicContext(Context):
+
+    def __init__(self, *processors): 
+        basic_type_proc = (proc.is_basic_type, False) # no qualifiers allowed
+        processors = (basic_type_proc,) + processors
+        super(BasicContext, self).__init__(*processors)
 
 
-
-class BasicContext(VinoContext):
-
+class ArrayContext(Context):
     def __init__(self, *processors, **kw): 
-        processors = (proc.is_basic_type,) + processors
-        super(BasicContext, self).__init__(*processors, **kw)
-
-    def run(self, data, context):
-        return self._runners.run(data) 
-        # TODO: handle bytes somehow
-        # if utils.is_iterable(data, exclude_dict=False):
-        #     raise errors.ValidationError('Expected Basic Type ')
-
-
-class ArrayContext(VinoContext):
-    def __init__(self, *processors, **kw): 
-        processors = (proc.is_array_type,) + processors
+        array_type_proc = (proc.is_array_type, False) # no qualifiers allowed
+        processors = (array_type_proc,) + processors
         super(ArrayContext, self).__init__(*processors, **kw)
 
     def run(self, data, context):
-        return self._runners.run(data)
+        return self.runners.run(data)
+    
+    @property
+    def qualifiers(self):
+        if not hasattr(self, '_qualifiers'):
+            self._qualifiers = ItemQualifierStack(self)
+        return self._qualifiers
 
-class ArrayItemsContext(VinoContext):
+    def apply_to(self, *qualifiers):
+        qualifier_stack = ItemQualifierStack()
+        self.runners.add_qualifiers(qualifier_stack, *qualifiers)
+        return self
+
+
+class ArrayItemsContext(Context):
 
     @property
     def qualifiers(self):
@@ -61,9 +128,6 @@ class ArrayItemsContext(VinoContext):
             return self._qualifiers
         self._qualifiers = ItemQualifierStack(self)
         return self._qualifiers
-
-    def validate(self, data):
-        return self.run(data, self)
 
     def run(self, data, context):
         if data is None:
@@ -81,15 +145,18 @@ class ArrayItemsContext(VinoContext):
         self.qualifiers.add(*qualifiers)
         return self
 
-
-class ObjectContext(VinoContext):
+class ObjectContext(Context):
     def __init__(self, *processors, **kw): 
-        processors = (proc.is_object_type,) + processors
+        object_type_proc = (proc.is_object_type, False) # no qualifiers allowed
+        processors = (object_type_proc,) + processors
         super(ObjectContext, self).__init__(*processors, **kw)
 
-class ObjectMembersContext(VinoContext):
-    def validate(self, data):
-        return self.run(data, self)
+    def apply_to(self, *qualifiers):
+        qualifier_stack = MemberQualifierStack()
+        self.runners.add_qualifiers(qualifier_stack, *qualifiers)
+        return self
+
+class ObjectMembersContext(Context):
 
     def run(self, data, context):
         """

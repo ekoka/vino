@@ -73,3 +73,8 @@ class TestValidationErrorStack:
     @pytest.mark.skip
     def test_when_treated_as_exception_proxies_to_first_error(self):
         assert 0
+
+@pytest.mark.skip
+def test_error_raised_with_interrupt_should_also_set_it_on_error_stack():
+    assert 0
+

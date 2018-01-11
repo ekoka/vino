@@ -6,41 +6,92 @@ class Qualifier:
 
 class ItemQualifierStack:
 
-    def __init__(self, context=None, *qualifiers):
-        self.qualifiers = {
-            'index': set(),
-            'call': [],
-        }
-        self.context = context
+    def __init__(self, *qualifiers):
+        self.add(*qualifiers)
 
-        for q in qualifiers:
-            self.add(q)
+    @property
+    def qualifiers(self):
+        if not hasattr(self, '_qualifiers'):
+            self._qualifiers = {
+                'indexes': set(),
+                'calls': [],
+            }
+        return self._qualifiers
 
     def empty(self):
-        return not (self.qualifiers['index'] or self.qualifiers['call'])
+        return not (self.qualifiers['indexes'] or self.qualifiers['calls'])
 
     def qualify(self, index, data):
-        if index in self.qualifiers['index']:
+        if index in self.qualifiers['indexes']:
             return True
-        for call in self.qualifiers['call']:
+        for call in self.qualifiers['calls']:
             if call(index, data):
                 return True
         return False
 
     def add(self, *qualifiers):
         for qualifier in qualifiers:
-            import logging
-            logger = logging.getLogger('vino')
-            logger.info(qualifier)
             if utils.is_intlike(qualifier):
-                self.qualifiers['index'].add(qualifier)
+                self.qualifiers['indexes'].add(qualifier)
             elif utils.is_iterable(qualifier):
-                [self.qualifiers['index'].add(i) for i in qualifier]
+                [self.qualifiers['indexes'].add(i) for i in qualifier]
             elif callable(qualifier):
-                self.qualifiers['call'].append(qualifier)
+                self.qualifiers['calls'].append(qualifier)
             else:
                 # TODO: more descriptive error
                 raise errors.VinoError('Invalid Qualifier')
+
+    def apply(self, data, runner, context):
+        rv = []
+        for i,d in enumerate(data):
+            if self.qualify(i,d):
+                rv.append(runner.run(d, context))
+            else:
+                rv.append(d)
+        return rv
+
+class MemberQualifierStack:
+
+    def __init__(self, *qualifiers):
+        self.add(*qualifiers)
+
+    @property
+    def qualifiers(self):
+        if not hasattr(self, '_qualifiers'):
+            self._qualifiers = {
+                'keys': set(),
+                'calls': [],
+            }
+        return self._qualifiers
+
+    def add(self, *qualifiers):
+        for qualifier in qualifiers:
+            if utils.is_str(qualifier):
+                self.qualifiers['keys'].add(qualifier)
+            elif utils.is_iterable(qualifier):
+                [self.qualifiers['keys'].add(i) for i in qualifier]
+            elif callable(qualifier):
+                self.qualifiers['calls'].append(qualifier)
+            else:
+                # TODO: more descriptive error
+                raise errors.VinoError('Invalid Qualifier')
+
+    def qualify(self, key, data):
+        if key in self.qualifiers['keys']:
+            return True
+        for call in self.qualifiers['calls']:
+            if call(key, data):
+                return True
+        return False
+
+    def apply(self, data, runner, context):
+        rv = {}
+        for k,d in data.items(): 
+            if self.qualify(k, d):
+                rv[k] = runner.run(d, context)
+            else:
+                rv[k] = d
+        return rv
 
 
 class SequenceQualifier(Qualifier):

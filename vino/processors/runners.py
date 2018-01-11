@@ -40,18 +40,6 @@ class ProcessorRunner(Runner):
         return self.processor(data, context)
 
 
-# NOTE: I'm not sure this is still needed
-#class ContextRunner(Runner):
-#    def __init__(self, context):
-#        self.context = self._valid_context(context)
-#
-#    def _valid_context(self, context):
-#        if hasattr(context, 'validate'):
-#            return context
-#
-#    def run(value, context=None):
-#        self.context.validate(value, context)
-
 class RunnerStack:
     """ A stack of Runners.
     
@@ -60,55 +48,31 @@ class RunnerStack:
     def __init__(self, context, *processors):
         self.context = context
         self.runners = []
-        for i, p in enumerate(processors):
-            try:
-                runner = ProcessorRunner(p)
-                # TODO: change the isinstance to make the API more flexible
-                # and duck-typable.
-                from ..contexts import ObjectContext
-                if runner.name and not isinstance(context, ObjectContext):
-                    raise err.VinoError('The context enclosing {} does not '
-                                        'appear to be an Object context, yet '
-                                        '{} is declared with a name.'.format(
-                                        p, p))
-                
+        self.add(*processors)
 
-            except err.VinoError:
-                raise
-                # NOTE: this will not be called for Contexts since they now 
-                # mimick Processor's API
+    def add(self, *processors):
+        for p, qualifiers in processors:
+            runner = ProcessorRunner(p)
+            # TODO: change the isinstance to make the API more flexible
+            # and duck-typable.
+            from ..contexts import ObjectContext
+            # TODO: move this. The name will be in the QualifierStack not
+            # the Runner.
+            if runner.name and not isinstance(context, ObjectContext):
+                raise err.VinoError(
+                    'The context enclosing {} does not appear to be an Object '
+                    'context, yet {} is declared with a name.'.format(p, p))
+            self.runners.append({'runner': runner, 'qualifiers': qualifiers})
 
-                # is this an ArrayItemsContext-like object?
-                runner = ContextRunner(p)
-                # check that the object has 
-            self.runners.append(runner)
-
-    def run(self, data):
+    def run(self, data, **kw):
         e_stack = err.ValidationErrorStack('Validation Errors')
-        for r in self.runners:
+        for runner in self.runners:
+            r,q = runner['runner'],runner['qualifiers']
             try:
-                if r.name:
-                    """ If it has a name it's implied that its parent context
-                    is an Object and that the data should be subscriptable.
-                    """
-                    try:
-                        # changing context
-                        value = data.get(r.name, _undef)
-                        data[r.name] = r.run(value, self.context)
-                    except AttributeError as e:
-                        """ The attribute was not found on the data """
-                        raise err.ValidationError(
-                            'Could not find  "{}": {}'
-                                .format(r.name, ))
-                    except TypeError as e:
-                        """ We're working from the wrong data type. How did
-                        we get here?"""
-                        raise err.ValidationError(
-                            ' "{}": {}'
-                                .format(r.name, ))
+                if q: 
+                    data = q.apply(data, r, self.context)
                 else:
-                    value = data
-                    data = r.run(value, self.context)
+                    data = r.run(data, self.context)
             except err.ValidationError as e:
                 self._copy_data_in_err(e, data)
                 e_stack.append(e)
@@ -118,6 +82,20 @@ class RunnerStack:
             return data
         self._copy_data_in_err(e_stack, data)
         raise e_stack
+
+    def add_qualifiers(self, qs, *qualifiers):
+        if not self.runners:
+            # emtpy stack
+            raise err.VinoError(
+                'Cannot add qualifier without specifying a processor')
+        runner = self.runners[-1]
+        if runner['qualifiers'] is False:
+            raise err.VinoError('The processor does not accept qualifiers')
+        if runner['qualifiers'] is None:
+            runner['qualifiers'] = qs
+        # merge with previous qualifiers
+        runner['qualifiers'].add(*qualifiers)
+
 
     def _copy_data_in_err(self, e, data):
         # try to make shallow copy
