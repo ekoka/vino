@@ -28,9 +28,9 @@ def append_allownull(context):
     if not context.has_allownull:
         context.append_processor(allownull)
 
-class BasicTypeProcessor(Processor):
+class PrimitiveTypeProcessor(Processor):
     def run(self, data, context):
-        return is_basic_type(data, context)
+        return is_primitive_type(data, context)
 
 class ArrayTypeProcessor(Processor):
     def run(self, data, context):
@@ -40,7 +40,7 @@ class ObjectTypeProcessor(Processor):
     def run(self, data, context):
         return is_object_type(data, context)
 
-def is_basic_type(data, context):
+def is_primitive_type(data, context):
     # TODO: handle bytes somehow
     if (utils.is_str(data) or utils.is_numberlike(data) 
         or utils.is_boolean(data) or data is None):

@@ -34,20 +34,22 @@ class TestValidationErrorStack:
             e = e_stack[5]
 
     def test_contains_all_errors_raised_by_stack(self, tags, fails_continue):
-        processes = []
+        processors = []
         for t, f in list(zip(tags, fails_continue)): 
-            processes += t,f
-        rs = runners.RunnerStack(None, *processes)
+            processors += t,f
+        processors = tuple((p, None) for p in processors)
+        rs = runners.RunnerStack(None, *processors)
         try:
             rs.run('some value')
         except err.ValidationErrorStack as es:
             assert len(es)==len(fails_continue)
 
     def test_errors_each_have_value_at_failure_time(self, tags, fails_continue):
-        processes = []
+        processors = []
         for t, f in list(zip(tags, fails_continue)): 
-            processes += t,f
-        rs = runners.RunnerStack(None, *processes)
+            processors += t,f
+        processors = tuple((p, None) for p in processors)
+        rs = runners.RunnerStack(None, *processors)
         try:
             rs.run('some value')
         except err.ValidationErrorStack as es:

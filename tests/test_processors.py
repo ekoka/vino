@@ -1,15 +1,16 @@
-from vino.processors.processors import BooleanProcessor, MandatoryClause
+from vino.processors import processors as proc
 import pytest
 import random
+from vino import errors as err
 
 @pytest.fixture
 def BP():
-    class rv(BooleanProcessor): pass
+    class rv(proc.BooleanProcessor): pass
     return rv 
 
 @pytest.fixture
 def Mandatory():
-    class rv(BooleanProcessor, MandatoryClause):
+    class rv(proc.BooleanProcessor, proc.MandatoryClause):
         __clause_mandatory__ = True
         __clause_name__ = 'random clause'
         __clause_precedence__ = -5
@@ -75,3 +76,49 @@ def test_processor_wrapped_by_MandatoryClause_keeps_same_api(Mandatory):
             return 'abc 123'
     ud = M.adapt(userdefinedcls())
     assert ud.run()=='abc 123'
+
+class TestArrayTypeProcessor:
+    def test_can_validate_listlike_data(self):
+        # here we're just happy that it doesn't raise any errors
+        p = proc.ArrayTypeProcessor()
+        p.run(list('abcd'), None)
+        p.run(tuple('abcd'), None)
+
+    def test_converts_array_and_tuple_data_to_list(self):
+        p = proc.ArrayTypeProcessor()
+        s = 'abcd'
+        for f in [list, tuple]:
+            rv = p.run(f(s), None)
+            assert rv==list(s)
+
+    def test_accepts_empty_list(self):
+        p = proc.ArrayTypeProcessor()
+        p.run([], None)
+
+    def test_accepts_None(self):
+        p = proc.ArrayTypeProcessor()
+        p.run(None, None)
+
+    def test_rejects_sets(self):
+        p = proc.ArrayTypeProcessor()
+        with pytest.raises(err.ValidationError) as exc_info:
+            rv = p.run(set('abcd'), None)
+        error = exc_info.value
+        assert 'wrong type' in error.args[0].lower()
+        assert error.args[1] is set
+
+    def test_rejects_dict(self):
+        p = proc.ArrayTypeProcessor()
+        with pytest.raises(err.ValidationError) as exc_info:
+            rv = p.run({'a':'a', 'b':'c', 'c':'d'}, None)
+        error = exc_info.value
+        assert 'wrong type' in error.args[0].lower()
+        assert error.args[1] is dict
+
+    def test_rejects_str(self):
+        p = proc.ArrayTypeProcessor()
+        with pytest.raises(err.ValidationError) as exc_info:
+            rv = p.run('abcd', None)
+        error = exc_info.value
+        assert 'wrong type' in error.args[0].lower()
+        assert error.args[1] is str

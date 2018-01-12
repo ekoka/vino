@@ -2,7 +2,8 @@ import pytest
 import logging
 import random
 from string import ascii_letters, digits
-from vino.errors import ValidationError
+from vino import errors as err
+from vino import contexts as ctx
 
 @pytest.fixture('session')
 def logger():
@@ -11,10 +12,15 @@ def logger():
     return rv
 
 @pytest.fixture
+def context():
+    class rv(ctx.Context): pass
+    return rv
+
+@pytest.fixture
 def processors():
     length = 5
     def create_fnc(i):
-        return lambda: i
+        return (lambda: i), None
     processors = [create_fnc(i) for i in range(length)]
     return processors
 
@@ -36,9 +42,9 @@ def tags():
 @pytest.fixture
 def fails_continue():
     def fail1(value, context):
-        raise ValidationError('first failure', False)
+        raise err.ValidationError('first failure', False)
     def fail2(value, context):
-        raise ValidationError('second failure', False)
+        raise err.ValidationError('second failure', False)
     def fail3(value, context):
-        raise ValidationError('third failure', False)
+        raise err.ValidationError('third failure', False)
     return fail1, fail2, fail3
