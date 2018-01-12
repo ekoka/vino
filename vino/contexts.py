@@ -1,5 +1,4 @@
 from .processors.runners import RunnerStack
-from .qualifiers import ItemQualifierStack, MemberQualifierStack
 
 class Context:
     ''' The Context represent the primary scope of influence of a processor.
@@ -51,32 +50,6 @@ class Context:
         """ Let's quack like a Processor """
         # default behaviour is to simply return a copy of the data
         return self.runners.run(data)
-
-#class BasicContext(Context): pass
-#
-#    def __init__(self, *processors): 
-#        basic_type_proc = (proc.is_basic_type, False) # no qualifiers allowed
-#        processors = (basic_type_proc,) + processors
-#        super(BasicContext, self).__init__(*processors)
-
-
-#class ArrayContext(Context):
-#
-#    _qualifier_stack_constructor = ItemQualifierStack
-#
-#    def __init__(self, *processors, **kw): 
-#        array_type_proc = (proc.is_array_type, False) # no qualifiers allowed
-#        processors = (array_type_proc,) + processors
-#        super(ArrayContext, self).__init__(*processors, **kw)
-#
-#class ObjectContext(Context):
-#
-#    _qualifier_stack_constructor = MemberQualifierStack
-#
-#    def __init__(self, *processors, **kw): 
-#        object_type_proc = (proc.is_object_type, False) # no qualifiers allowed
-#        processors = (object_type_proc,) + processors
-#        super(ObjectContext, self).__init__(*processors, **kw)
 
 class StreamContext: pass
 class UnspecifiedContext: pass
