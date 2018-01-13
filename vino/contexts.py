@@ -43,8 +43,7 @@ class Context:
         processors that it previously registered.
         """
         rv = self.spawn()
-        processors = (self._tuplefy(p) for p in processors)
-        rv.runners.add(*processors)
+        rv.expand(*processors)
         return rv
 
     def spawn(self):
