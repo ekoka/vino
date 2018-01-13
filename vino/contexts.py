@@ -15,7 +15,7 @@ class Context:
         """ The initializer doesn't do anything other than providing some
         convenience for adding processors at declaration time.
         """
-        self.add(*processors)
+        self.expand(*processors)
 
     def _tuplefy(self, processor):
         try: 
@@ -23,20 +23,39 @@ class Context:
         except (TypeError, IndexError) as e:
             return (processor, None)
 
-    def add(self, *processors):
-        """ add processors """
-        processors = (self._tuplefy(p) for p in processors)
-        self.runners.add(*processors)
-
-    def apply_to(self, *qualifiers):
-        tpl = (self,) + qualifiers
-        return self._tuplefy(tpl)
-
     @property
     def runners(self):
         if not hasattr(self, '_runners'):
             self._runners = RunnerStack(self)
         return self._runners
+
+    @runners.setter
+    def runners(self, _runners):
+        self._runners = _runners
+
+    def expand(self, *processors):
+        processors = (self._tuplefy(p) for p in processors)
+        self.runners.add(*processors)
+
+    def add(self, *processors):
+        """ To make Context more immutable this method does not extend its
+        own Context, but rather spawns a new one to which it gives the same 
+        processors that it previously registered.
+        """
+        rv = self.spawn()
+        processors = (self._tuplefy(p) for p in processors)
+        rv.runners.add(*processors)
+        return rv
+
+    def spawn(self):
+        constructor =  self.__class__
+        rv = constructor()
+        rv.runners = self.runners.copy(rv)
+        return rv
+
+    def apply_to(self, *qualifiers):
+        tpl = (self,) + qualifiers
+        return self._tuplefy(tpl)
 
     def validate(self, data):
         """ This method is typically called as an entry point for a root

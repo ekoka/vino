@@ -12,87 +12,69 @@ class TestContext:
         c = context
         assert hasattr(c, '_qualifier_stack_constructor')
 
-    def test__init__proxies_to_add_method(s, context, tags, mocker):
-        mock_add = mocker.patch.object(context, 'add')
+    def test__init__proxies_to_expand_method(s, context, tags, mocker):
+        mk_expand = mocker.patch.object(context, 'expand')
         c = context(*tags)
-        mock_add.assert_called_once_with(*tags)
+        mk_expand.assert_called_once_with(*tags)
 
-    def test_can_add_processors_specified_in_tuple(s, tags, context, mocker):
-        processors = ((t, None) for t in tags)
-        c = context()
-        mocker.patch.object(c, '_runners')
-        c.add(*processors)
-
-    def test_can_add_processors_specified_alone(s, tags, context, mocker):
-        c = context()
-        mocker.patch.object(c, '_runners')
-        c.add(*tags)
-
-    def test_tuples_added_to_runner_stack_with_proper_signature(
-            s, tags, context, mocker):
-        processors = ((t, None) for t in tags)
-        c = context()
-        r = mocker.patch.object(c, '_runners')
-        c.add(*processors)
-        r.add.assert_called_once_with(
-            (tags[0], None), (tags[1], None), (tags[2], None))
-
-    def test_tuples_added_to_runner_stack(s, tags, context):
-        processors = ((t, None) for t in tags)
-        c = context()
-        c.add(*processors)
-        assert len(c.runners)==len(tags)
-
-    def test_processors_added_to_runner_stack_with_proper_signature(
+    def test_processors_given_proper_signature_if_received_as_is(
             s, tags, context, mocker):
         c = context()
-        r = mocker.patch.object(c, '_runners')
-        c.add(*tags)
-        r.add.assert_called_once_with(
-            (tags[0], None), (tags[1], None), (tags[2], None))
+        mk_add = mocker.patch.object(c._runners, 'add')
+        c.expand(*tags)
+        processors = tuple((t, None) for t in tags)
+        mk_add.assert_called_once_with(*processors)
+
+    def test_processors_given_proper_signature_if_received_as_tuples(
+            s, tags, context, mocker):
+        processors = tuple((t, None, 3, 2, False) for t in tags)
+        c = context()
+        mk_add = mocker.patch.object(c._runners, 'add')
+        c.expand(*processors)
+        mk_add.assert_called_once_with(*processors)
 
     def test_processors_added_to_runner_stack(s, tags, context):
         c = context()
-        c.add(*tags)
+        c.expand(*tags)
         assert len(c.runners)==len(tags)
 
-    def test_validate_method_proxies_to_run_method(s, mocker, context):
+    def test_validate_proxies_to_run(s, mocker, context):
         c = context()
-        mock_run = mocker.patch.object(c, 'run')
+        mk_run = mocker.patch.object(c, 'run')
         c.validate('abc')
-        mock_run.assert_called_once_with('abc', c)
+        mk_run.assert_called_once_with('abc', c)
 
     def test_validate_method_does_not_take_context_object(s, context):
         c = context()
         # no context, all is good
         c.validate('abc')
         # context given, should raise
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError) as e:
             c.validate('abc', 'context')
         assert ('validate() takes 2 positional arguments' 
-                in str(exc_info.value).lower())
+                in str(e.value).lower())
 
     def test_run_method_takes_context_object_as_second_argument(s, context):
         c = context()
         # context passed, all is good
         c.run('abc', 'context')
         # no context, should raise
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError) as e:
             c.run('abc')
         assert ("missing 1 required positional argument: 'context'" 
-                in str(exc_info.value).lower())
+                in str(e.value).lower())
 
     def test_validate_passes_self_as_context_to_run_method(s, context, mocker):
         c = context()
-        mock_run = mocker.patch.object(c, 'run')
+        mk_run = mocker.patch.object(c, 'run')
         c.validate('abc')
-        mock_run.assert_called_once_with('abc', c)
+        mk_run.assert_called_once_with('abc', c)
 
     def test_run_method_calls_runner_stack_run_method(s, context, mocker):
         c = context()
-        mock_run = mocker.patch.object(c._runners, 'run')
+        mk_run = mocker.patch.object(c._runners, 'run')
         c.run('abc', c)
-        mock_run.assert_called_once_with('abc')
+        mk_run.assert_called_once_with('abc')
 
     def test_apply_to_method_returns_context_with_qualifiers(
             s, context, mocker):
@@ -115,5 +97,65 @@ class TestContext:
             assert e.data=='<u><i><b>'+'some contents'+'</b></i></u>'
 
     @pytest.mark.skip
-    def test_can_have_multiple_sub_contexts():
-        assert False
+    def test_can_have_multiple_sub_contexts(s):
+        assert 0 
+
+    def test_spawned_context_is_different_than_original(
+            s, tags, context):
+        c = context(*tags)
+        nc = c.spawn()
+        assert nc is not c
+
+    def test_spawned_context_has_same_constructor_than_original(
+            s, context, tags):
+        c = context(*tags)
+        nc = c.spawn()
+        assert nc.__class__ is c.__class__
+
+    def test_spawned_context_has_different_runner_stack_than_original(
+            s, tags, context):
+        c = context(*tags)
+        nc = c.spawn()
+        assert c._runners is not nc._runners
+
+    def test_spawned_context_runner_stack_refers_to_spawned_context(
+            s, tags, context):
+        c = context(*tags)
+        nc = c.spawn()
+        assert nc.runners.context is nc
+        
+    def test_spawned_context_runner_stack_received_same_runners_as_original(
+            s, tags, context):
+        c = context(*tags)
+        nc = c.spawn()
+        for i,r in enumerate(c.runners):
+            assert r is nc.runners[i]
+
+    def test_add_method_does_not_change_current_context(s, tags, context):
+        c = context(*tags)
+        count = len(c.runners)
+        runners = c.runners
+        stack = c.runners[:]
+        c.add(lambda*a:None)
+        for i, r in enumerate(c.runners):
+            assert r==stack[i]
+        assert len(c.runners)==count
+        assert runners==c.runners
+
+    def test_add_method_spawns_another_context(s, tags, context):
+        c = context(*tags)
+        nc = c.add(lambda*a:None)
+        assert nc is not c
+
+    def test_add_method_without_processors_simply_spawns_new_context(
+            s, tags, context):
+        c = context(*tags)
+        nc = c.add()
+        assert nc is not c
+
+    def test_add_method_with_processors_spawns_context_with_more_processors(
+            s, tags, context):
+        c = context(*tags)
+        nc = c.add(*tags)
+        assert len(nc.runners)==len(c.runners) + len(tags)
+

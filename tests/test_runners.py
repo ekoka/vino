@@ -299,6 +299,54 @@ class TestRunnerStack:
             value = rs.run('some contents')
         assert e.value.data=='<u><i><b>'+'some contents'+'</b></i></u>'
 
+    def test_copy_returns_different_runner_stack(s):
+        rs = runners.RunnerStack(None)
+        nrs = rs.copy()
+        assert rs is not nrs
+
+    def test_copied_rs_has_same_runners_than_original(s, tags):
+        processors = tuple((t,None) for t in tags)
+        rs = runners.RunnerStack(None, *processors)
+        nrs = rs.copy()
+        for i,r in enumerate(rs):
+            assert r is nrs[i]
+
+    def test_copied_rs_has_same_constructor_than_original(s, tags):
+        processors = tuple((t,None) for t in tags)
+        rs = runners.RunnerStack(None, *processors)
+        nrs = rs.copy()
+        assert rs.__class__ is nrs.__class__
+
+    def test_by_default_new_rs_has_same_ctx_as_original(s, tags):
+        my_context = {'a':'b'}
+        processors = tuple((t,None) for t in tags)
+        rs = runners.RunnerStack(my_context, *processors)
+        nrs1 = rs.copy()
+        nrs2 = rs.copy(None)
+        assert rs.context is nrs1.context is nrs2.context
+
+    def test_can_override_context_for_new_rs(s, tags):
+        context1 = {'a':'b'}
+        context2 = {'b':'a'}
+        processors = tuple((t,None) for t in tags)
+        rs = runners.RunnerStack(context1, *processors)
+        nrs = rs.copy(context2)
+        assert nrs.context is context2
+
+    def test_overriding_context_for_new_rs_does_not_change_original(s, tags):
+        context1 = {'a':'b'}
+        context2 = {'b':'a'}
+        processors = tuple((t,None) for t in tags)
+        rs = runners.RunnerStack(context1, *processors)
+        nrs = rs.copy(context2)
+        assert rs.context is context1
+
+    def test_can_set_context_to_None_for_new_rs_by_specifying_False(s, tags):
+        context1 = {'a':'b'}
+        processors = tuple((t,None) for t in tags)
+        rs = runners.RunnerStack(context1, *processors)
+        nrs = rs.copy(False)
+        assert nrs.context is None
 
     @pytest.mark.skip
     def test_error_raised_in_qualifier_run_should_propagate_to_runner_stack():

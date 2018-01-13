@@ -13,8 +13,8 @@ def logger():
 
 @pytest.fixture
 def context():
-    class rv(ctx.Context): pass
-    return rv
+    class TestContext(ctx.Context): pass
+    return TestContext
 
 @pytest.fixture
 def processors():

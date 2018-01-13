@@ -54,6 +54,10 @@ class RunnerStack:
             self._runners = []
         return self._runners
 
+    @runners.setter
+    def runners(self, _runners):
+        self._runners = _runners
+
     def add(self, *processors):
         for processor in processors:
             try:
@@ -111,6 +115,19 @@ class RunnerStack:
         self._copy_data_in_err(e_stack, data)
         raise e_stack
 
+    def copy(self, context=None):
+        """ This spawns and returns a new RunnerStack loaded up with currently
+        registered Runners.
+        """
+        if context is None:
+            context = self.context
+        if context is False:
+            context = None
+
+        constructor = self.__class__
+        rv = constructor(context)
+        rv.runners = self.runners[:]
+        return rv
 
     def _copy_data_in_err(self, e, data):
         # try to make shallow copy
