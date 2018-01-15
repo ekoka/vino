@@ -178,11 +178,10 @@ class TestRunnerStack:
 
     def test_cant_add_qualifier_if_context_has_no_QStack_class(self, tags):
         processors = ((t, None) for t in tags)
-        c = ctx.Context()
-        c._qualifier_stack_constructor = quals.ItemQualifierStack
+        c = ctx.Context(qualifier_stack_cls=quals.ItemQualifierStack)
         rs = runners.RunnerStack(c)
         rs.add(*processors)
-        c._qualifier_stack_constructor = None
+        c.qualifier_stack_cls = None
         with pytest.raises(err.VinoError) as exc_info:
             rs.add_qualifiers([0,1])
         error = exc_info.value
@@ -192,7 +191,7 @@ class TestRunnerStack:
     def test_can_add_qualifiers_if_context_has_QStack_class(self, tags):
         processors = ((t, None) for t in tags)
         c = ctx.Context()
-        c._qualifier_stack_constructor = quals.ItemQualifierStack
+        c = ctx.Context(qualifier_stack_cls=quals.ItemQualifierStack)
         rs = runners.RunnerStack(c)
         rs.add(*processors)
         rs.add_qualifiers([0,1])
@@ -202,8 +201,7 @@ class TestRunnerStack:
 
     def test_successive_qualifier_applications_merges_qualifiers(self, tags):
         processors = ((t, None) for t in tags)
-        c = ctx.Context()
-        c._qualifier_stack_constructor = quals.ItemQualifierStack
+        c = ctx.Context(qualifier_stack_cls=quals.ItemQualifierStack)
         rs = runners.RunnerStack(c)
         rs.add(*processors)
         rs.add_qualifiers([0,1])

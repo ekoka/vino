@@ -8,9 +8,13 @@ class TestContext:
         c = context()
         assert len(c._runners)==0
 
-    def test_has__qualifiers_stack_constructor_property(s, context):
-        c = context
-        assert hasattr(c, '_qualifier_stack_constructor')
+    def test___init__takes_qualifiers_stack_cls_kwarg(s, context):
+        c = context(qualifier_stack_cls=True)
+        assert c.qualifier_stack_cls is True
+
+    def test___init__takes_runner_stack_cls_kwarg(s, context, mocker):
+        c = context(runner_stack_cls=mocker.MagicMock())
+        assert c.runner_stack_cls.called
 
     def test__init__proxies_to_expand_method(s, context, tags, mocker):
         mk_expand = mocker.patch.object(context, 'expand')

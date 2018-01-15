@@ -9,9 +9,13 @@ class Context:
     sub-scopes.
     '''
 
-    _qualifier_stack_constructor = None
+    _default_runner_stack_cls = RunnerStack
 
-    def __init__(self, *processors):
+    def __init__(self, *processors, **kwargs):
+        self.runner_stack_cls = kwargs.pop(
+            'runner_stack_cls', Context._default_runner_stack_cls)
+        self.qualifier_stack_cls = kwargs.pop('qualifier_stack_cls', None)
+
         """ The initializer doesn't do anything other than providing some
         convenience for adding processors at declaration time.
         """
@@ -26,7 +30,7 @@ class Context:
     @property
     def runners(self):
         if not hasattr(self, '_runners'):
-            self._runners = RunnerStack(self)
+            self._runners = self.runner_stack_cls(self)
         return self._runners
 
     @runners.setter

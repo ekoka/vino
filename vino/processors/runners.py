@@ -87,12 +87,12 @@ class RunnerStack:
                 raise err.VinoError(
                     'RunnerStack must be given a Context object to enable '
                     'implicit creation of QualifierStack objects.')
-            if self.context._qualifier_stack_constructor is None:
+            if self.context.qualifier_stack_cls is None:
                 raise err.VinoError(
                     'A QualifierStack constructor must be specified for this '
                     'Context to enable implicit creation of QualifierStack '
                     'objects.')
-            runner['qualifiers'] = self.context._qualifier_stack_constructor()
+            runner['qualifiers'] = self.context.qualifier_stack_cls()
         # merge with previous qualifiers
         runner['qualifiers'].add(*qualifiers)
 
