@@ -22,6 +22,7 @@ class Runner:
             processor = processor.vino_init()
         except AttributeError:
             pass
+        self._raw_processor = processor
         self.name = getattr(processor, 'name', None)
         self.processor = self._valid_processor(processor)
 

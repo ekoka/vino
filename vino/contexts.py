@@ -1,3 +1,4 @@
+from . import utils as uls 
 from .processors.runners import RunnerStack
 
 class Context:
@@ -15,10 +16,6 @@ class Context:
         self.runner_stack_cls = kwargs.pop(
             'runner_stack_cls', Context._default_runner_stack_cls)
         self.qualifier_stack_cls = kwargs.pop('qualifier_stack_cls', None)
-
-        """ The initializer doesn't do anything other than providing some
-        convenience for adding processors at declaration time.
-        """
         self.expand(*processors)
 
     def _tuplefy(self, processor):
@@ -26,6 +23,14 @@ class Context:
             return processor[:1] + processor[1:]
         except (TypeError, IndexError) as e:
             return (processor, None)
+
+    def spawn(self):
+        cls =  self.__class__
+        rv = cls.__new__(cls)
+        rv.runner_stack_cls=self.runner_stack_cls
+        rv.qualifier_stack_cls=self.qualifier_stack_cls
+        rv.runners = self.runners.copy(rv)
+        return rv
 
     @property
     def runners(self):
@@ -50,17 +55,11 @@ class Context:
         rv.expand(*processors)
         return rv
 
-    def spawn(self):
-        constructor =  self.__class__
-        rv = constructor()
-        rv.runners = self.runners.copy(rv)
-        return rv
-
     def apply_to(self, *qualifiers):
         tpl = (self,) + qualifiers
         return self._tuplefy(tpl)
 
-    def validate(self, data):
+    def validate(self, data=uls._undef):
         """ This method is typically called as an entry point for a root
         Context object. When a Context is a subset part of another Context, its
         `run()` method is called instead by a Runner, receiving all necessary

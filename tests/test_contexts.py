@@ -55,7 +55,7 @@ class TestContext:
         # context given, should raise
         with pytest.raises(TypeError) as e:
             c.validate('abc', 'context')
-        assert ('validate() takes 2 positional arguments' 
+        assert ('2 positional arguments but 3 were given' 
                 in str(e.value).lower())
 
     def test_run_method_takes_context_object_as_second_argument(s, context):
@@ -81,7 +81,7 @@ class TestContext:
         mk_run.assert_called_once_with('abc')
 
     def test_apply_to_method_returns_context_with_qualifiers(
-            s, context, mocker):
+            s, context):
         c = context()
         rv = c.apply_to('abc', 'def')
         assert rv==(c, 'abc', 'def')

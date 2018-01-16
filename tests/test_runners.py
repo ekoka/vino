@@ -69,9 +69,9 @@ class TestRunnerStack:
 
     def test__init__proxies_to_add_method(self, tags, mocker):
         processors = tuple((t, None) for t in tags)
-        add_mock = mocker.patch.object(runners.RunnerStack, 'add')
+        mk_add = mocker.patch.object(runners.RunnerStack, 'add')
         rs = runners.RunnerStack(None, *processors) 
-        add_mock.assert_called_once_with(*processors)
+        mk_add.assert_called_once_with(*processors)
 
     def test_can_add_processors_in_tuple(self, tags):
         processors = ((t, None) for t in tags)
