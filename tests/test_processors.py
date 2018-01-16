@@ -10,6 +10,17 @@ def BP():
     return rv 
 
 @pytest.fixture
+def Invertables():
+    class NoCls(prc.BooleanProcessor):
+        __clause_name__ = 'invert'
+        __mirror_cls__ = lambda:YesCls
+
+    class YesCls(prc.BooleanProcessor):
+        __clause_name__ = 'invert'
+        __mirror_cls__ = lambda:NoCls
+    return YesCls, NoCls
+
+@pytest.fixture
 def Mandatory():
     class rv(prc.BooleanProcessor, vld.MandatoryClause):
         __clause_name__ = 'random clause'
@@ -28,33 +39,16 @@ def test_instance_of_BP_created_without_value_sets_it_to_default(BP, logger):
         rq = BP()
         assert rq.data==BP.__default__
 
-def test_inversing_BP_class_returns_instance_with_value_set_to_False(BP):
-    not_bp = ~BP
-    assert not_bp.data is False
+def test_inversing_BP_class_returns_mirror_class(Invertables):
+    Y, N = Invertables
+    assert N is ~Y
+    assert ~N is Y
 
-def test_instance_of_BP_created_with_a_mirror_instance(BP):
-    bp = BP()
-    assert isinstance(bp.mirror, BP)
+def test_BP_without_mirror_raises_error_if_inverted(BP):
+    with pytest.raises(err.VinoError) as e:
+        not_BP = ~BP
+    assert 'mirror class' in str(e.value).lower()
 
-def test_mirror_instances_have_opposite_bool_values(BP):
-    rnd = [random.randint(1, 100) for i in range(9)]
-    for i in [0, None, [], {}, '']+rnd:
-        r = BP(i)
-        assert isinstance(r.data, bool) 
-        assert isinstance(r.mirror.data, bool)
-        assert r.data is not r.mirror.data
-
-def test_inversing_BP_class_returns_instance_of_class(BP):
-    not_bp = ~BP
-    assert isinstance(not_bp, BP)
-
-def test_instance_from_inversing_BP_class_has_mirror_value(BP):
-    not_bp = ~BP
-    assert isinstance(not_bp.data, bool) 
-    assert isinstance(BP.__default__, bool)
-    assert not_bp.data is not BP.__default__
-
-    #assert not_bp.mirror.data is True
 
 def test_callable_wrapped_by_MandatoryClause_acquires_clause_attr(Mandatory):
     M = Mandatory

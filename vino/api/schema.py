@@ -9,13 +9,13 @@ from ..processors import marshalling as msh
 
 class Schema:
 
-    __mandatory_clauses__ = ('required', 'allowempty', 'allownull')
+    __mandatory_clauses__ = ('required', 'empty', 'null')
     
     def add_mandatory_processors(self, processors):
         inactive = self._inactive_mandatories(processors)
         for p in Schema.__mandatory_clauses__: # guarantees the order
             if p in inactive:
-                method = getattr(self, 'add_'+p)
+                method = getattr(self, 'add_'+p+'_clause')
                 processors = method(processors)
         return processors
 
@@ -30,15 +30,15 @@ class Schema:
                 continue
         return set(mandatory_clauses)
 
-    def add_required(self, processors):
+    def add_required_clause(self, processors):
         rv = (vld.required,) + processors
         return rv
 
-    def add_allowempty(self, processors):
-        rv = processors + (~vld.allowempty,)
+    def add_empty_clause(self, processors):
+        rv = processors + (vld.rejectempty,)
         return rv
 
-    def add_allownull(self, processors):
+    def add_null_clause(self, processors):
         rv = processors + (vld.allownull,)
         return rv
 

@@ -129,5 +129,8 @@ class AllowEmpty(prc.BooleanProcessor, MandatoryClause):
 
 # aliases
 required = Required
+optional = Optional
 allowempty = AllowEmpty
 allownull = AllowNull
+rejectempty = RejectEmpty
+rejectnull = RejectNull

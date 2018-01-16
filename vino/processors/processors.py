@@ -51,11 +51,15 @@ class polymorphic(object):
 
 class BooleanProcessorMeta(type):
     def __invert__(cls):
-        """ this allows `BooleanProcessor` classes to return an instance of
-        themselves with a data set to the opposite when the bitwise `~` is
-        applied on them.
+        """ this allows `BooleanProcessor` classes to return a mirror class
+        that has is semantically the opposite of their setting.
         """
-        return cls(not cls.__default__)
+        try:
+            mirror_cls = cls.__mirror_cls__()
+        except:
+            # TODO: more descriptive
+            raise err.VinoError('no mirror class was set')
+        return mirror_cls
 
     def vino_init(cls, *a, **kw):
         return cls(*a, **kw)
