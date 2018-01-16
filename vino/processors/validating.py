@@ -73,24 +73,54 @@ class ProcessorAdapter:
         return self.fnc.run(*a, **kw)
 
 
+class Optional(prc.BooleanProcessor, MandatoryClause):
+    __clause_name__ = 'required'
+    __mirror_cls__=lambda:Required
+
+    def run(self, data=uls._undef, context=uls._undef):
+        if not self.data and data is uls._undef:
+            raise err.ValidationError('data is required')
+        return data
+
 class Required(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'required'
+    __mirror_cls__=lambda:Optional
 
     def run(self, data=uls._undef, context=uls._undef):
         if self.data and data is uls._undef:
             raise err.ValidationError('data is required')
         return data
 
+class RejectNull(prc.BooleanProcessor, MandatoryClause):
+    __clause_name__ = 'null'
+    __mirror_cls__ = lambda:AllowNull
+
+    def run(self, data=uls._undef, context=uls._undef):
+        if self.data and data is None:
+            raise err.ValidationError('data must not be null')
+        return data
+
 class AllowNull(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'allownull'
+    __clause_name__ = 'null'
+    __mirror_cls__ = lambda:RejectNull
 
     def run(self, data=uls._undef, context=uls._undef):
         if not self.data and data is None:
             raise err.ValidationError('data must not be null')
         return data
 
+class RejectEmpty(prc.BooleanProcessor, MandatoryClause):
+    __clause_name__ = 'empty'
+    __mirror_cls__ = lambda:AllowEmpty
+
+    def run(self, data=uls._undef, context=uls._undef):
+        if self.data and data in ((), {}, '', set(), []):
+            raise err.ValidationError('data must not be empty')
+        return data
+
 class AllowEmpty(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'allowempty'
+    __clause_name__ = 'empty'
+    __mirror_cls__=lambda:RejectEmpty
 
     def run(self, data=uls._undef, context=uls._undef):
         if not self.data and data in ((), {}, '', set(), []):

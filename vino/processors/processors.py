@@ -68,9 +68,4 @@ class BooleanProcessor(metaclass=BooleanProcessorMeta):
         if data is _undef:
             data = self.__class__.__default__
         self.data = bool(data)
-        self._register_mirror(mirror)
         
-    def _register_mirror(self, mirror=_undef):
-        if mirror is _undef:
-            mirror = self.__class__.__mirror_cls__
-        self.mirror = mirror
