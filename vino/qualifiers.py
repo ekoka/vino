@@ -76,20 +76,35 @@ class MemberQualifierStack:
                 # TODO: more descriptive error
                 raise errors.VinoError('Invalid Qualifier')
 
-    def qualify(self, key, data):
+    #def qualify(self, key, data):
+    #    if key in self.qualifiers['keys']:
+    #        return True
+    #    for call in self.qualifiers['calls']:
+    #        if call(key, data):
+    #            return True
+    #    return False
+
+    def keys_match(self, key):
         if key in self.qualifiers['keys']:
             return True
+
+    def calls_match(self, key, data):
         for call in self.qualifiers['calls']:
             if call(key, data):
                 return True
-        return False
 
     def apply(self, data, runner, context):
         rv = {}
+        matches = dict(keys_match=[], calls_match=[], no_match=[])
         for k,d in data.items(): 
-            if self.qualify(k, d):
+            if self.keys_match(k):
+                matches['by_keys'].append(k)
+                rv[k] = runner.run(d, context)
+            elif self.calls_match(k, d):
+                matches['by_calls'].append(k)
                 rv[k] = runner.run(d, context)
             else:
+                matches['not_matched'].append(k)
                 rv[k] = d
         return rv
 
