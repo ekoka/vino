@@ -94,18 +94,20 @@ class MemberQualifierStack:
                 return True
 
     def apply(self, data, runner, context):
-        rv = {}
-        matches = dict(keys_match=[], calls_match=[], no_match=[])
+        rv = {
+            'results':{},
+            'matches':dict(by_keys=[], by_calls=[], not_matched=[]),
+        }
         for k,d in data.items(): 
             if self.keys_match(k):
-                matches['by_keys'].append(k)
-                rv[k] = runner.run(d, context)
+                rv['matches']['by_keys'].append(k)
+                rv['results'][k] = runner.run(d, context)
             elif self.calls_match(k, d):
-                matches['by_calls'].append(k)
-                rv[k] = runner.run(d, context)
+                rv['matches']['by_calls'].append(k)
+                rv['results'][k] = runner.run(d, context)
             else:
-                matches['not_matched'].append(k)
-                rv[k] = d
+                rv['matches']['not_matched'].append(k)
+                rv['results'][k] = d
         return rv
 
 
