@@ -12,6 +12,10 @@ def prim():
 def arr():
     return shm.ArrayTypeSchema()
 
+@pytest.fixture
+def obj():
+    return shm.ObjectTypeSchema()
+
 class TestPrimitiveTypeSchema:
 
     def test_adds_primitive_type_processor_first(s, prim):
@@ -67,7 +71,13 @@ class TestPrimitiveTypeSchema:
         assert prim.runners[3]['runner']._raw_processor is p1
 
 
-#class TestArrayTypeSchema:
-#
-#    def test_adds_array_type_processor_first(s, arr):
-#        assert arr.runners[0]['runner']._raw_processor is vld.is_array_type
+class TestArrayTypeSchema:
+
+    def test_adds_array_type_processor_first(s, arr):
+        assert arr.runners[0]['runner']._raw_processor is vld.is_array_type
+
+
+class TestObjectTypeSchema:
+
+    def test_adds_object_type_processor_first(s, obj):
+        assert obj.runners[0]['runner']._raw_processor is vld.is_object_type
