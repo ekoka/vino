@@ -50,6 +50,23 @@ class ItemQualifierStack:
                 rv.append(d)
         return rv
 
+    def apply(self, data, runner, context):
+        rv = {
+            'results':{},
+            'matches':dict(by_index=[], by_call=[], not_matched=[]),
+        }
+        for k,d in data.items(): 
+            if self.keys_match(k):
+                rv['matches']['by_key'].append(k)
+                rv['results'][k] = runner.run(d, context)
+            elif self.calls_match(k, d):
+                rv['matches']['by_call'].append(k)
+                rv['results'][k] = runner.run(d, context)
+            else:
+                rv['matches']['not_matched'].append(k)
+                rv['results'][k] = d
+        return rv
+
 class MemberQualifierStack:
 
     def __init__(self, *qualifiers):
@@ -96,14 +113,14 @@ class MemberQualifierStack:
     def apply(self, data, runner, context):
         rv = {
             'results':{},
-            'matches':dict(by_keys=[], by_calls=[], not_matched=[]),
+            'matches':dict(by_key=[], by_call=[], not_matched=[]),
         }
         for k,d in data.items(): 
             if self.keys_match(k):
-                rv['matches']['by_keys'].append(k)
+                rv['matches']['by_key'].append(k)
                 rv['results'][k] = runner.run(d, context)
             elif self.calls_match(k, d):
-                rv['matches']['by_calls'].append(k)
+                rv['matches']['by_call'].append(k)
                 rv['results'][k] = runner.run(d, context)
             else:
                 rv['matches']['not_matched'].append(k)
