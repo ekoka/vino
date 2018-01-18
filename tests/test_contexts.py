@@ -89,7 +89,7 @@ class TestContext:
     # NOTE: functional test?
     def test_validation_continues_if_interrupt_flag_not_raised(s, tags):
         # tags are : bold, italic, and underline in that order
-        def failing_processor(value, context):
+        def failing_processor(value, state):
             e = err.ValidationError("I'll fail you, no matter what", 
                                 interrupt_validation=False)
             raise e

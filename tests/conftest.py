@@ -31,20 +31,20 @@ def randstr():
 
 @pytest.fixture
 def tags():
-    def bold(value, context):
+    def bold(value, state):
         return '<b>'+value+'</b>'
-    def italic(value, context):
+    def italic(value, state):
         return '<i>'+value+'</i>'
-    def underline(value, context):
+    def underline(value, state):
         return '<u>'+value+'</u>'
     return bold, italic, underline 
 
 @pytest.fixture
 def fails_continue():
-    def fail1(value, context):
+    def fail1(value, state):
         raise err.ValidationError('first failure', False)
-    def fail2(value, context):
+    def fail2(value, state):
         raise err.ValidationError('second failure', False)
-    def fail3(value, context):
+    def fail3(value, state):
         raise err.ValidationError('third failure', False)
     return fail1, fail2, fail3

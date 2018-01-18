@@ -21,13 +21,6 @@ class ItemQualifierStack:
     def empty(self):
         return not (self.qualifiers['indexes'] or self.qualifiers['calls'])
 
-    def qualify(self, index, data):
-        if index in self.qualifiers['indexes']:
-            return True
-        for call in self.qualifiers['calls']:
-            if call(index, data):
-                return True
-        return False
 
     def add(self, *qualifiers):
         for qualifier in qualifiers:
@@ -41,30 +34,42 @@ class ItemQualifierStack:
                 # TODO: more descriptive error
                 raise errors.VinoError('Invalid Qualifier')
 
-    def apply(self, data, runner, context):
-        rv = []
-        for i,d in enumerate(data):
-            if self.qualify(i,d):
-                rv.append(runner.run(d, context))
-            else:
-                rv.append(d)
-        return rv
+    def index_match(self, idx):
+        return idx in self.qualifiers['indexes']
 
-    def apply(self, data, runner, context):
-        rv = {
-            'results':{},
-            'matches':dict(by_index=[], by_call=[], not_matched=[]),
-        }
-        for k,d in data.items(): 
-            if self.keys_match(k):
-                rv['matches']['by_key'].append(k)
-                rv['results'][k] = runner.run(d, context)
-            elif self.calls_match(k, d):
-                rv['matches']['by_call'].append(k)
-                rv['results'][k] = runner.run(d, context)
+    def call_match(self, idx, data):
+        for call in self.qualifiers['calls']:
+            if call(idx, data):
+                return True
+
+    def _get_matches(self, state):
+        # TODO: When the state is part of its own class, it should be passed
+        # to the qualifier.
+        if state.get('matches') is None:
+            # None means we're initializing the state for Array type
+            state['matches'] = dict(
+                by_index=set(),
+                by_call=set(),
+                not_matched=set(),
+            )
+        elif state['matches'].get('by_index') is None:
+            #TODO: better error message
+            raise err.VinoError('unstable state')
+        return state['matches']
+
+    def apply(self, data, runner, state):
+        matches = self._get_matches(state)
+        rv = []
+        for i,d in enumerate(data): 
+            if self.index_match(i):
+                matches['by_index'].add(i)
+                rv.append(runner.run(d, state))
+            elif self.call_match(i, d):
+                matches['by_call'].add(i)
+                rv.append(runner.run(d, state))
             else:
-                rv['matches']['not_matched'].append(k)
-                rv['results'][k] = d
+                matches['not_matched'].add(i)
+                rv.append(d)
         return rv
 
 class MemberQualifierStack:
@@ -93,38 +98,43 @@ class MemberQualifierStack:
                 # TODO: more descriptive error
                 raise errors.VinoError('Invalid Qualifier')
 
-    #def qualify(self, key, data):
-    #    if key in self.qualifiers['keys']:
-    #        return True
-    #    for call in self.qualifiers['calls']:
-    #        if call(key, data):
-    #            return True
-    #    return False
-
     def keys_match(self, key):
-        if key in self.qualifiers['keys']:
-            return True
+        return key in self.qualifiers['keys']
 
-    def calls_match(self, key, data):
+    def call_match(self, key, data):
         for call in self.qualifiers['calls']:
             if call(key, data):
                 return True
 
-    def apply(self, data, runner, context):
-        rv = {
-            'results':{},
-            'matches':dict(by_key=[], by_call=[], not_matched=[]),
-        }
+    def _get_matches(self, state):
+        # TODO: When the state is part of its own class, it should be passed
+        # to the qualifier.
+        if state.get('matches') is None:
+            # None means we're initializing the state for Object type
+            state['matches'] = dict(
+                by_key=set(),
+                by_call=set(),
+                not_matched=set(),
+            )
+        elif state['matches'].get('by_key') is None:
+            # if not None, but no 'by_key' something is off
+            #TODO: better error message
+            raise err.VinoError('unstable state')
+        return state['matches']
+
+    def apply(self, data, runner, context, state):
+        matches = self._get_matches(state)
+        rv = {}
         for k,d in data.items(): 
             if self.keys_match(k):
-                rv['matches']['by_key'].append(k)
-                rv['results'][k] = runner.run(d, context)
-            elif self.calls_match(k, d):
-                rv['matches']['by_call'].append(k)
-                rv['results'][k] = runner.run(d, context)
+                matches['by_key'].add(k)
+                rv[k] = runner.run(d, state)
+            elif self.call_match(k, d):
+                matches['by_call'].add(k)
+                rv[k] = runner.run(d, state)
             else:
-                rv['matches']['not_matched'].append(k)
-                rv['results'][k] = d
+                matches['not_matched'].add(k)
+                rv[k] = d
         return rv
 
 
