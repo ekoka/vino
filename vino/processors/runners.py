@@ -34,8 +34,8 @@ class Runner:
         name = self.name or repr(processor)
         raise err.VinoError('Invalid Processor {}'.format(name))
 
-    def run(self, data, context=None, state=None):
-        return self.processor(data, context, state)
+    def run(self, data, state=None):
+        return self.processor(data, state)
 
 
 class RunnerStack:
