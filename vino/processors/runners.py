@@ -34,8 +34,8 @@ class Runner:
         name = self.name or repr(processor)
         raise err.VinoError('Invalid Processor {}'.format(name))
 
-    def run(self, data, context=None):
-        return self.processor(data, context)
+    def run(self, data, state=None):
+        return self.processor(data, state)
 
 
 class RunnerStack:
@@ -99,13 +99,16 @@ class RunnerStack:
 
     def run(self, data, **kw):
         e_stack = err.ValidationErrorStack('Validation Errors')
+        state = {'matches':None, 'context': self.context}
+        # state should be made here
+        # it encompasses the result and the state
         for runner in self.runners:
             r,q = runner['runner'],runner['qualifiers']
             try:
                 if q: 
-                    data = q.apply(data, r, self.context)
+                    data = q.apply(data, r, state)
                 else:
-                    data = r.run(data, self.context)
+                    data = r.run(data, state)
             except err.ValidationError as e:
                 self._copy_data_in_err(e, data)
                 e_stack.append(e)
