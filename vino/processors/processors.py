@@ -5,30 +5,6 @@ import functools
 
 class Processor: pass
 
-def ismissing(data=_undef):
-    return data is _empty
-
-def isempty(data=_undef):
-    empty_values = ['', None, [], {}, tuple(), set()]
-    return data in empty_values
-
-def isnull(data=_undef):
-    return data is None
-
-def prepend_required(context):
-    # TODO: import required her
-    if not context.has_required:
-        context.prepend_processor(~required)
-
-def append_allowempty(context):
-    if not context.has_allowempty:
-        context.append_processor(~allowempty)
-
-def append_allownull(context):
-    if not context.has_allownull:
-        context.append_processor(allownull)
-
-
 class polymorphic(object):
 
     def __init__(self, fnc):
@@ -50,26 +26,96 @@ class polymorphic(object):
             return self._method.__get__(instance, owner)
 
 class BooleanProcessorMeta(type):
+
+    def __new__(mtcls, clsname, parents, attrs):
+        cls = type.__new__(mtcls, clsname, parents, attrs)
+        # get declared inverse and clause, if any
+        inverse = attrs.get('__inverse__')
+        clause_name = attrs.get('__clause_name__')
+
+        # if no inverse, create one
+        if inverse is None:
+            inverse_name = 'Not'+clsname
+            # neuter automatic inverse
+            inv_attrs = {'__qualname__':inverse_name, 
+                         '__module__':attrs['__module__']}
+            inverse = type.__new__(mtcls, inverse_name, parents, inv_attrs)
+            cls.__inverse__ = inverse
+
+        # update inverse
+        inverse.__inverse__ = cls
+        inverse.__clause_name__ = clause_name
+
+        return cls
+
     def __invert__(cls):
-        """ this allows `BooleanProcessor` classes to return a mirror class
+        """ this allows `BooleanProcessor` classes to return an inverse class
         that has is semantically the opposite of their setting.
         """
         try:
-            mirror_cls = cls.__mirror_cls__()
+            inverse = cls.__inverse__
         except:
             # TODO: more descriptive
-            raise err.VinoError('no mirror class was set')
-        return mirror_cls
+            raise err.VinoError('no inverse class was set')
+        return inverse
+
+    def __call__(cls, *a, **kw):
+        if not callable(getattr(cls, 'run', None)):
+            return cls._get_active_object(*a, **kw)
+        return type.__call__(cls, *a, **kw)
+
+    def _get_active_object(cls, *a, **kw):
+        # to be considered active the class must have a `run()` method
+        inverse = cls.__inverse__
+        if not callable(getattr(inverse,'run', None)):
+            raise err.VinoError('Two inactive Boolean Processors in one '
+                                'relationship.')
+        try:
+            data = kw.pop('data')
+        except KeyError:
+            try:
+                a = list(a)
+                data = a.pop(0)
+            except IndexError:
+                # data neither in *a nor **kw, means we go for default
+                data = cls.__default_value__
+
+        if data not in cls.__accepted_values__: # will accept 0 and 1
+            #TODO: better message
+            raise err.VinoError('Expected boolean value, got ', data)
+
+        # we switch class and bool value
+        data = not data
+        # create instance
+        rv = inverse.__new__(inverse)
+        rv.__init__(data, *a, **kw)
+        return rv
 
     def vino_init(cls, *a, **kw):
         return cls(*a, **kw)
 
 
 class BooleanProcessor(metaclass=BooleanProcessorMeta):
-    __default__ = True
+    __accepted_values__ = (True, False)
+    __default_value__ = True
 
-    def __init__(self, data=_undef, mirror=_undef):
+    def __init__(self, data=_undef, mapping=None):
         if data is _undef:
-            data = self.__class__.__default__
-        self.data = bool(data)
-        
+            data = self.__class__.__default_value__
+
+        if data not in BooleanProcessor.__accepted_values__:
+            #TODO: better message
+            raise err.VinoError('Expected boolean value, got ', data)
+        self.data = data
+        if mapping is not None:
+            self.mapping = mapping
+
+    def _resolve_mapping(self, value):
+        try:
+            return self.mapping[value]
+        except AttributeError:
+            #TODO: better message
+            raise err.ValidationError('no mapping defined')
+        except KeyError:
+            #TODO: better message
+            raise err.ValidationError('value not found in mapping')

@@ -78,6 +78,7 @@ class TestArrayTypeProcessor:
         assert 'wrong type' in e.value.args[0].lower()
         assert e.value.args[1] is str
 
+
 class TestObjectTypeProcessor:
     def test_validation_rv_of_empty_object_is_empty_obj(s):
         p = vld.ObjectTypeProcessor()
@@ -160,3 +161,4 @@ class TestObjectTypeProcessor:
         error = e.value
         assert 'wrong type' in e.value.args[0].lower()
         assert e.value.args[1] is tuple
+

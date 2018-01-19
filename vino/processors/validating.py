@@ -3,18 +3,18 @@ from ..processors import processors as prc
 from .. import errors as err
 
 class PrimitiveTypeProcessor(prc.Processor):
-    def run(self, data, context):
-        return is_primitive_type(data, context)
+    def run(self, data, state):
+        return is_primitive_type(data, state)
 
 class ArrayTypeProcessor(prc.Processor):
-    def run(self, data, context):
-        return is_array_type(data, context)
+    def run(self, data, state):
+        return is_array_type(data, state)
 
 class ObjectTypeProcessor(prc.Processor):
-    def run(self, data, context):
-        return is_object_type(data, context)
+    def run(self, data, state):
+        return is_object_type(data, state)
 
-def is_primitive_type(data, context):
+def is_primitive_type(data, state):
     # TODO: handle bytes somehow
     if (data is uls._undef or uls.is_str(data) or uls.is_numberlike(data)
         or uls.is_boolean(data) or data is None):
@@ -23,7 +23,7 @@ def is_primitive_type(data, context):
     raise err.ValidationError(
         'Wrong type provided. Expected Array type.', type(data))
 
-def is_array_type(data, context):
+def is_array_type(data, state):
     # ensures that data is None or if not set 
     # otherwise ensures that data is set to a non-dict sequence 
     # then attempts to convert it to a list
@@ -37,7 +37,7 @@ def is_array_type(data, context):
         'Wrong type provided. Expected Array type.', 
         type(data))
 
-def is_object_type(data, context):
+def is_object_type(data, state):
     if data is None:
         return None
     try:
@@ -72,58 +72,33 @@ class ProcessorAdapter:
     def run(self, *a, **kw):
         return self.fnc.run(*a, **kw)
 
-
-class Optional(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'required'
-    __mirror_cls__=lambda:Required
-
-    def run(self, data=uls._undef, context=uls._undef):
-        if not self.data and data is uls._undef:
-            raise err.ValidationError('data is required')
-        return data
-
+class Optional(prc.BooleanProcessor, MandatoryClause): pass
 class Required(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'required'
-    __mirror_cls__=lambda:Optional
+    __inverse__=Optional
 
-    def run(self, data=uls._undef, context=uls._undef):
+    def run(self, data=uls._undef, state=uls._undef):
         if self.data and data is uls._undef:
             raise err.ValidationError('data is required')
         return data
 
+class AllowNull(prc.BooleanProcessor, MandatoryClause): pass
 class RejectNull(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'null'
-    __mirror_cls__ = lambda:AllowNull
+    __inverse__ =AllowNull
 
-    def run(self, data=uls._undef, context=uls._undef):
+    def run(self, data=uls._undef, state=uls._undef):
         if self.data and data is None:
             raise err.ValidationError('data must not be null')
         return data
 
-class AllowNull(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'null'
-    __mirror_cls__ = lambda:RejectNull
-
-    def run(self, data=uls._undef, context=uls._undef):
-        if not self.data and data is None:
-            raise err.ValidationError('data must not be null')
-        return data
-
+class AllowEmpty(prc.BooleanProcessor, MandatoryClause): pass
 class RejectEmpty(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'empty'
-    __mirror_cls__ = lambda:AllowEmpty
+    __inverse__ = AllowEmpty
 
-    def run(self, data=uls._undef, context=uls._undef):
+    def run(self, data=uls._undef, state=uls._undef):
         if self.data and data in ((), {}, '', set(), []):
-            raise err.ValidationError('data must not be empty')
-        return data
-
-class AllowEmpty(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'empty'
-    __mirror_cls__=lambda:RejectEmpty
-
-    def run(self, data=uls._undef, context=uls._undef):
-        if not self.data and data in ((), {}, '', set(), []):
             raise err.ValidationError('data must not be empty')
         return data
 

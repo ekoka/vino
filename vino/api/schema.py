@@ -42,6 +42,7 @@ class Schema:
         rv = processors + (vld.allownull,)
         return rv
 
+
 class PrimitiveTypeSchema(Schema, ctx.Context):
 
     def __init__(self, *processors):
@@ -50,7 +51,6 @@ class PrimitiveTypeSchema(Schema, ctx.Context):
         processors = self.add_mandatory_processors(processors)
         processors = (vld.is_primitive_type,) + processors
         super(PrimitiveTypeSchema, self).__init__(*processors)
-        #ctx.Context.__init__(self, *processors)
 
     def _assert_no_qualifiers(self, processor):
         try:
@@ -67,7 +67,6 @@ class ArrayTypeSchema(Schema, ctx.Context):
         processors = (vld.is_array_type,) + processors
         super(ArrayTypeSchema, self).__init__(
             *processors, qualifier_stack_cls=qls.ItemQualifierStack)
-        #ctx.Context.__init__(self, *processors)
 
 class ObjectTypeSchema(Schema, ctx.Context):
     
