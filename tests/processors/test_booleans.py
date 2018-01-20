@@ -102,14 +102,23 @@ class TestMandatoryProcessors:
         ud = M.adapt(userdefinedcls())
         assert ud.run()=='abc 123'
 
-class TestRequiredProcessor: 
-    def test_has_small_case_alias(s):
+    def test_aliases(s):
         assert vld.required is vld.Required
         assert vld.optional is vld.Optional
+        assert vld.allownull is vld.AllowNull
+        assert vld.rejectnull is vld.RejectNull
+        assert vld.allowempty is vld.AllowEmpty
+        assert vld.rejectempty is vld.RejectEmpty
 
-    def test_inverse_of_Required_is_Optional_and_vice_versa(s):
+    def test_inverses(s):
         assert ~vld.required is vld.optional
         assert ~vld.optional is vld.required
+        assert ~vld.allownull is vld.rejectnull
+        assert ~vld.rejectnull is vld.allownull
+        assert ~vld.allowempty is vld.rejectempty
+        assert ~vld.rejectempty is vld.allowempty
+
+class TestRequiredProcessor: 
 
     def test_required_rejects_absent_value(s):
         v = vld.required()
@@ -133,7 +142,23 @@ class TestRequiredProcessor:
         rv = v.run()
         assert rv is uls._undef
 
-class TestNullProcessor: pass
+class TestNullProcessor:
+    def test_rejectnull(s):
+        v = vld.rejectnull()
+        with pytest.raises(err.ValidationError) as e:
+            v.run(None)
+        assert 'must not be null' in str(e.value)
+
+    def test_allownull(s):
+        v = vld.allownull()
+        assert v.run(None) is None
+
+    def test_allownull_is_rejectnull_set_to_false(s):
+        v = vld.allownull()
+        assert isinstance(v, vld.rejectnull)
+        assert v.data is False
+
 class TestEmptyProcessor: pass
+
 
 
