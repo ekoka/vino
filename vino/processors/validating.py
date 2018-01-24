@@ -109,3 +109,46 @@ allowempty = AllowEmpty
 allownull = AllowNull
 rejectempty = RejectEmpty
 rejectnull = RejectNull
+
+class isnotint(prc.BooleanProcessor):
+
+    def __init__(self, onfail=None, cast=False, bool_as_int=False):
+        self.onfail = onfail
+        self.isint = isnotint.__inverse__(cast=cast, bool_as_int=bool_as_int)
+
+    def run(self, data=uls._undef, state=uls._undef):
+        try:
+            self.isint.run(data)
+        except err.ValidationError:
+            return data
+            #TODO: better message
+        raise err.ValidationError('value should not be an integer.')
+
+
+class isint(prc.BooleanProcessor):
+    __clause_name__ = 'int'
+    __inverse__ = isnotint
+
+    def __init__(self, onfail=None, cast=False, bool_as_int=False):
+        self.onfail = onfail
+        self.cast = cast
+        self.bool_as_int = bool_as_int
+
+    def run(self, data=uls._undef, state=uls._undef):
+        data = self._cast(data)
+        if not uls.is_intlike(data, bool_as_int=self.bool_as_int):
+            #TODO: better message
+            raise err.ValidationError('wrong data type expected int')
+        return data
+
+    def _cast(self, data):
+        if self.cast: 
+            if self.cast is True:
+                fnc = int
+            else:
+                fnc = self.cast
+            try:
+                return fnc(data)
+            except:
+                pass
+        return data

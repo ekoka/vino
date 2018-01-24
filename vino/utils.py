@@ -13,12 +13,15 @@ def is_listlike(l):
     except:
         return False
 
-def is_intlike(i, positive=False):
+def is_intlike(value, positive=False, bool_as_int=False):
+    if not bool_as_int: 
+        if value is True or value is False:
+            return False
     try:
-        [0][i]
-        return i>=0 if positive else True
-    except IndexError:
+        [0][value]
         return True
+    except IndexError:
+        return value>=0 if positive else True
     except TypeError:
         return False
 
@@ -63,7 +66,10 @@ def is_str(value):
 def is_bytes(value):
     return hasattr(value, '__iter__') and hasattr(value, 'decode')
 
-def is_boolean(value):
+def is_boolean(value, int_as_bool=False):
+    if not int_as_bool:
+        if value is 1 or value is 0:
+            return False
     return value in (True, False)
 
 def to_str(value):

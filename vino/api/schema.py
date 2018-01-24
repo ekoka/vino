@@ -78,3 +78,7 @@ class ObjectTypeSchema(Schema, ctx.Context):
 
 
 
+
+prim = PrimitiveTypeSchema
+arr = ArrayTypeSchema
+obj = ObjectTypeSchema

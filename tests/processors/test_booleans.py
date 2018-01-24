@@ -158,7 +158,40 @@ class TestNullProcessor:
         assert isinstance(v, vld.rejectnull)
         assert v.data is False
 
-class TestEmptyProcessor: pass
+    def test_allownull_set_to_false_is_rejectnull_set_to_true(s):
+        v = vld.allownull(False)
+        assert isinstance(v, vld.rejectnull)
+        assert v.data is True
 
+    def test_rejectnull_accepts_empty_and_false_values(s):
+        v = vld.allownull(False)
+        for d in ['',{},[],(),set(),False,0]:
+            assert v.run(d)==d
 
+class TestEmptyProcessor:
+    def test_rejectempty(s):
+        v = vld.rejectempty()
+        for d in ['',{},[],(),set()]:
+            with pytest.raises(err.ValidationError) as e:
+                v.run(d)
+            assert 'must not be empty' in str(e.value)
 
+    def test_allowempty(s):
+        v = vld.rejectempty(False)
+        for d in ['',{},[],(),set()]:
+            assert v.run(d)==d
+
+    def test_allowempty_is_rejectempty_set_to_False(s):
+        v = vld.allowempty()
+        assert isinstance(v, vld.rejectempty)
+        assert v.data is False
+
+    def test_allowempty_set_to_false_is_rejectempty(s):
+        v = vld.allowempty(False)
+        assert isinstance(v, vld.rejectempty)
+        assert v.data is True
+
+    def test_rejectempty_accepts_None_and_False_values(s):
+        v = vld.allowempty(False)
+        for d in [None,False,0]:
+            assert v.run(d)==d

@@ -122,7 +122,7 @@ class MemberQualifierStack:
             raise err.VinoError('unstable state')
         return state['matches']
 
-    def apply(self, data, runner, context, state):
+    def apply(self, data, runner, state):
         matches = self._get_matches(state)
         rv = {}
         for k,d in data.items(): 

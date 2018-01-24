@@ -4,6 +4,9 @@ import pytest
 def test_error_raised_in_qualifier_run_should_propagate():
     assert 0
 
+@pytest.mark.skip
+def test_takes_state(): assert 0
+
 #@pytest.mark.skip
 #class TestArrayItemContext:
 #
