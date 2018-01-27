@@ -82,7 +82,7 @@ class Required(prc.BooleanProcessor, MandatoryClause):
         self.default = kw.pop('default', uls._undef)
         if self.default is not uls._undef:
             if callable(self.default):
-                self.default = [default]
+                self.default = [self.default]
             else:
             # TODO: must also allow processors, i.e. check for run() method
             # TODO: should create an `is_processor()` function.
