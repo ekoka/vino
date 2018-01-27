@@ -71,24 +71,24 @@ class BooleanProcessorMeta(type):
             raise err.VinoError('Two inactive Boolean Processors in one '
                                 'relationship.')
         try:
-            data = kw.pop('data')
+            flag = kw.pop('flag')
         except KeyError:
             try:
                 a = list(a)
-                data = a.pop(0)
+                flag = a.pop(0)
             except IndexError:
-                # data neither in *a nor **kw, means we go for default
-                data = cls.__default_value__
+                # flag neither in *a nor **kw, means we go for default
+                flag = cls.__default_value__
 
-        if data not in cls.__accepted_values__: # will accept 0 and 1
+        if flag not in cls.__accepted_values__: # will accept 0 and 1
             #TODO: better message
-            raise err.VinoError('Expected boolean value, got ', data)
+            raise err.VinoError('Expected boolean value, got ', flag)
 
         # we switch class and bool value
-        data = not data
+        flag = not flag
         # create instance
         rv = inverse.__new__(inverse)
-        rv.__init__(data, *a, **kw)
+        rv.__init__(flag, *a, **kw)
         return rv
 
     def vino_init(cls, *a, **kw):
@@ -99,14 +99,14 @@ class BooleanProcessor(metaclass=BooleanProcessorMeta):
     __accepted_values__ = (True, False)
     __default_value__ = True
 
-    def __init__(self, data=_undef, mapping=None):
-        if data is _undef:
-            data = self.__class__.__default_value__
+    def __init__(self, flag=_undef, mapping=None):
+        if flag is _undef:
+            flag = self.__class__.__default_value__
 
-        if data not in BooleanProcessor.__accepted_values__:
+        if flag not in BooleanProcessor.__accepted_values__:
             #TODO: better message
-            raise err.VinoError('Expected boolean value, got ', data)
-        self.data = data
+            raise err.VinoError('Expected boolean value, got ', flag)
+        self.flag = flag 
         if mapping is not None:
             self.mapping = mapping
 

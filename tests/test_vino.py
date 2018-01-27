@@ -33,14 +33,16 @@ class TestVino:
         for v in [33.2, 29.1, 0.3, None, False, 'abc']:
             assert v==s.validate(v)
 
-    def test_obj(s):
+    def test_obj(s, logger):
         data = {'a': 'b', 'c': 33}
         v = shm.obj(
             shm.prim(~vld.isint).apply_to('a'), 
             shm.prim(vld.isint).apply_to('c'), 
-            shm.prim(vld.isint).apply_to('e'), 
+            shm.prim(~vld.required).apply_to('e'), 
         )
-        assert data == v.validate(data)
+        result = v.validate(data)
+        logger.info(result)
+        assert data == result
 
     def test_nested(s, logger):
         data = {'a': 'b', 'c': 33, 'u': {'name': 'michael', 'age':44}}
