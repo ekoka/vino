@@ -79,7 +79,7 @@ class TestBooleanProcessor:
         for i in range(30):
             BP.__default_value__ = [True, False][random.randint(0, 1)]
             rq = BP()
-            assert rq.data==BP.__default_value__
+            assert rq.flag==BP.__default_value__
 
     def test_callable_wrapped_by_MandatoryClause_acquires_clause_attr(
             s, Mandatory):
@@ -156,12 +156,12 @@ class TestNullProcessor:
     def test_allownull_is_rejectnull_set_to_false(s):
         v = vld.allownull()
         assert isinstance(v, vld.rejectnull)
-        assert v.data is False
+        assert v.flag is False
 
     def test_allownull_set_to_false_is_rejectnull_set_to_true(s):
         v = vld.allownull(False)
         assert isinstance(v, vld.rejectnull)
-        assert v.data is True
+        assert v.flag is True
 
     def test_rejectnull_accepts_empty_and_false_values(s):
         v = vld.allownull(False)
@@ -184,12 +184,12 @@ class TestEmptyProcessor:
     def test_allowempty_is_rejectempty_set_to_False(s):
         v = vld.allowempty()
         assert isinstance(v, vld.rejectempty)
-        assert v.data is False
+        assert v.flag is False
 
     def test_allowempty_set_to_false_is_rejectempty(s):
         v = vld.allowempty(False)
         assert isinstance(v, vld.rejectempty)
-        assert v.data is True
+        assert v.flag is True
 
     def test_rejectempty_accepts_None_and_False_values(s):
         v = vld.allowempty(False)

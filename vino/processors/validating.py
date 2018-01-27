@@ -77,9 +77,34 @@ class Required(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'required'
     __inverse__=Optional
 
+    def __init__(self, *a, **kw):
+        # default is a kw only argument
+        self.default = kw.pop('default', uls._undef)
+        if self.default is not uls._undef:
+            if callable(self.default):
+                self.default = [default]
+            else:
+            # TODO: must also allow processors, i.e. check for run() method
+            # TODO: should create an `is_processor()` function.
+                try:
+                    if not self.default:
+                        raise TypeError
+                    for c in self.default:
+                        if not callable(c):
+                            raise TypeError
+                except TypeError:
+                    raise err.VinoError(
+                        '"default" must be a callable or a list of callables')
+
+        super(Required, self).__init__(*a, **kw)
+
     def run(self, data=uls._undef, state=uls._undef):
-        if self.data and data is uls._undef:
-            raise err.ValidationError('data is required')
+        if self.flag and data is uls._undef:
+            if self.default is not uls._undef:
+                for fnc in self.default:
+                    data = fnc(data=data, state=state)
+            else:
+                raise err.ValidationError('data is required')
         return data
 
 class AllowNull(prc.BooleanProcessor, MandatoryClause): pass
@@ -88,7 +113,7 @@ class RejectNull(prc.BooleanProcessor, MandatoryClause):
     __inverse__ =AllowNull
 
     def run(self, data=uls._undef, state=uls._undef):
-        if self.data and data is None:
+        if self.flag and data is None:
             raise err.ValidationError('data must not be null')
         return data
 
@@ -98,7 +123,7 @@ class RejectEmpty(prc.BooleanProcessor, MandatoryClause):
     __inverse__ = AllowEmpty
 
     def run(self, data=uls._undef, state=uls._undef):
-        if self.data and data in ((), {}, '', set(), []):
+        if self.flag and data in ((), {}, '', set(), []):
             raise err.ValidationError('data must not be empty')
         return data
 

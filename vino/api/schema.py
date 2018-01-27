@@ -77,6 +77,11 @@ class ObjectTypeSchema(Schema, ctx.Context):
             *processors, qualifier_stack_cls=qls.MemberQualifierStack)
 
 
+    def run(self, *a, **kw):
+        pre_rv = super(ObjectTypeSchema, self).run(*a, **kw)
+        return {k:v for k,v in pre_rv.items() if v is not uls._undef}
+
+
 
 
 prim = PrimitiveTypeSchema

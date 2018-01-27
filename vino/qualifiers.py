@@ -131,16 +131,26 @@ class MemberQualifierStack:
     def apply(self, data, runner, state):
         matches = self._get_matches(state)
         rv = {}
-        for k,d in data.items(): 
+        for k,value in data.items(): 
             if self.keys_match(k):
                 matches['by_key'].add(k)
-                rv[k] = runner.run(d, state)
-            elif self.call_match(k, d):
+                rv[k] = runner.run(value, state)
+            elif self.call_match(k, value):
                 matches['by_call'].add(k)
-                rv[k] = runner.run(d, state)
+                rv[k] = runner.run(value, state)
             else:
                 matches['not_matched'].add(k)
-                rv[k] = d
+                rv[k] = value
+
+        # ensure that all the explicit keys have been dealt with
+        for k in self.qualifiers['keys']:
+            if k not in matches['by_key']:
+                # so this qualifier specified this name explicitly and yet it
+                # didn't match. Maybe the data is missing this key, we still
+                # ask the runner what it should do about it, in case it allows
+                # undefined as a value.
+                rv[k] = runner.run(state=state)
+
         return rv
 
 
