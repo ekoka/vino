@@ -72,5 +72,15 @@ class Context:
         # default behaviour is to simply return a copy of the data
         return self.runners.run(data)
 
+    def make_state(self):
+        return {
+            'matches': self.init_matches(),
+            'context': self,
+        }
+
+    def init_matches(self): 
+        if self.qualifier_stack_cls:
+            return self.qualifier_stack_cls.init_matches()
+
 class StreamContext: pass
 class UnspecifiedContext: pass
