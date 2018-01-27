@@ -111,16 +111,22 @@ class MemberQualifierStack:
         # to the qualifier.
         if state.get('matches') is None:
             # None means we're initializing the state for Object type
-            state['matches'] = dict(
-                by_key=set(),
-                by_call=set(),
-                not_matched=set(),
-            )
+            state['matches'] = self.init_matches() 
         elif state['matches'].get('by_key') is None:
             # if not None, but no 'by_key' something is off
             #TODO: better error message
             raise err.VinoError('unstable state')
         return state['matches']
+
+    @classmethod
+    def init_matches(cls):
+        #TODO: there has to be a better way than using a classmethod for this.
+        #TODO: I should clean up all this state/matches business.
+        return dict(
+            by_key=set(),
+            by_call=set(),
+            not_matched=set(),
+        )
 
     def apply(self, data, runner, state):
         matches = self._get_matches(state)

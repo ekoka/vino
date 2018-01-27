@@ -71,6 +71,8 @@ class RunnerStack:
             if len(qualifiers)==1 and qualifiers[0] is False:
                 self.runners.append({'runner': runner, 'qualifiers': False})
             else:
+                #TODO: clean this up. If the runner has qualifiers then 
+                # make the runner an object, rather than a dict.
                 self.runners.append({'runner': runner, 'qualifiers': None})
                 if len(qualifiers)>1 or qualifiers[0] is not None:
                     self.add_qualifiers(*qualifiers)
@@ -99,9 +101,9 @@ class RunnerStack:
 
     def run(self, data, **kw):
         e_stack = err.ValidationErrorStack('Validation Errors')
-        state = {'matches':None, 'context': self.context}
-        # state should be made here
-        # it encompasses the result and the state
+        #if self.context:
+        state = self.context.make_state() if self.context else None
+        #state = {'matches':self.context.init_matches(), 'context': self.context}
         for runner in self.runners:
             r,q = runner['runner'],runner['qualifiers']
             try:
