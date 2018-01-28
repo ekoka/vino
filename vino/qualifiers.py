@@ -1,4 +1,4 @@
-from . import utils
+from . import utils as uls
 from . import errors 
 
 class Qualifier:
@@ -24,9 +24,9 @@ class ItemQualifierStack:
 
     def add(self, *qualifiers):
         for qualifier in qualifiers:
-            if utils.is_intlike(qualifier):
+            if uls.is_intlike(qualifier):
                 self.qualifiers['indexes'].add(qualifier)
-            elif utils.is_iterable(qualifier):
+            elif uls.is_iterable(qualifier):
                 [self.qualifiers['indexes'].add(i) for i in qualifier]
             elif callable(qualifier):
                 self.qualifiers['calls'].append(qualifier)
@@ -88,9 +88,9 @@ class MemberQualifierStack:
 
     def add(self, *qualifiers):
         for qualifier in qualifiers:
-            if utils.is_str(qualifier):
+            if uls.is_str(qualifier):
                 self.qualifiers['keys'].add(qualifier)
-            elif utils.is_iterable(qualifier):
+            elif uls.is_iterable(qualifier):
                 [self.qualifiers['keys'].add(i) for i in qualifier]
             elif callable(qualifier):
                 self.qualifiers['calls'].append(qualifier)
@@ -142,17 +142,23 @@ class MemberQualifierStack:
                 matches['not_matched'].add(k)
                 rv[k] = value
 
-        # ensure that all the explicit keys have been dealt with
-        for k in self.qualifiers['keys']:
-            if k not in matches['by_key']:
-                # so this qualifier specified this name explicitly and yet it
-                # didn't match. Maybe the data is missing this key, we still
-                # ask the runner what it should do about it, in case it allows
-                # undefined as a value.
-                rv[k] = runner.run(state=state)
-
+        self._process_missing_keys(rv, matches['by_key'], runner, state)
         return rv
 
+    def _process_missing_keys(self, data, matched_keys, runner, state):
+        # ensure that all the explicit keys have been dealt with
+        qualkeys = self.qualifiers['keys']
+        unmatched = qualkeys.difference(matched_keys)
+        if unmatched:
+            # some keys were explicitly registered, but are missing from the
+            # data. Maybe the runner is set up to provide a default value, or
+            # maybe it'll just raise a ValidationError. Let's find out.
+            default = runner.run(uls._undef, state=state)
+            # ok we got here, so it didn't raise an error.
+            if not default is uls._undef:
+                for k in unmatched:
+                    data[k] = default
+                    matched_keys.add(k)
 
 class SequenceQualifier(Qualifier):
 

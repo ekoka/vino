@@ -33,7 +33,7 @@ class TestVino:
         for v in [33.2, 29.1, 0.3, None, False, 'abc']:
             assert v==s.validate(v)
 
-    def test_obj(s, logger):
+    def test_obj(s):
         data = {'a': 'b', 'c': 33}
         v = shm.obj(
             shm.prim(~vld.isint).apply_to('a'), 
@@ -41,10 +41,19 @@ class TestVino:
             shm.prim(~vld.required).apply_to('e'), 
         )
         result = v.validate(data)
-        logger.info(result)
         assert data == result
 
-    def test_nested(s, logger):
+    def test_obj_required_undef_default(s):
+        data = {'c': 33}
+        set_def = lambda *a, **kw: 'b' 
+        v = shm.obj(
+            shm.prim(vld.required(default=set_def), ~vld.isint).apply_to('a'),
+            shm.prim(vld.isint).apply_to('c'), 
+        )
+        result = v.validate(data)
+        assert {'a':'b', 'c':33} == result
+
+    def test_nested(s):
         data = {'a': 'b', 'c': 33, 'u': {'name': 'michael', 'age':44}}
         user_schm = shm.obj(
             shm.prim(~vld.isint).apply_to('name'),
