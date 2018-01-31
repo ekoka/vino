@@ -79,7 +79,10 @@ class ObjectTypeSchema(Schema, ctx.Context):
 
     def run(self, *a, **kw):
         pre_rv = super(ObjectTypeSchema, self).run(*a, **kw)
-        return {k:v for k,v in pre_rv.items() if v is not uls._undef}
+        try:
+            return {k:v for k,v in pre_rv.items() if v is not uls._undef}
+        except AttributeError:
+            return pre_rv
 
 
 
