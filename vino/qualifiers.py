@@ -42,6 +42,16 @@ class ItemQualifierStack:
             if call(idx, data):
                 return True
 
+    @classmethod
+    def init_matches(cls):
+        #TODO: there has to be a better way than using a classmethod for this.
+        #TODO: I should clean up all this state/matches business.
+        return dict(
+            by_index=set(),
+            by_call=set(),
+            not_matched=set(),
+        )
+
     def _get_matches(self, state):
         # TODO: When the state is part of its own class, it should be passed
         # to the qualifier.
