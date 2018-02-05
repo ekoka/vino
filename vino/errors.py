@@ -35,6 +35,12 @@ class ValidationErrorStack(ValidationError):
     def __getitem__(self, item):
         return self.errors[item]
 
+    def __str__(self):
+        rv = []
+        for e in self.errors:
+            rv.append(str(e))
+        return "\n".join(rv)
+
 
 
 
