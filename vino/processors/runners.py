@@ -111,6 +111,9 @@ class RunnerStack:
                     data = q.apply(data, r, state)
                 else:
                     data = r.run(data, state)
+                # if data set or left to undef interrupt processing for it
+                if data is _undef:
+                    break
             except err.ValidationError as e:
                 self._copy_data_in_err(e, data)
                 e_stack.append(e)

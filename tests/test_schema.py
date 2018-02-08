@@ -18,8 +18,9 @@ def obj():
 
 # TODO: parametrize the tests to change the class
 class TestSchema:
+
     def test_adds_required_processor_if_none_found(s, prim):
-        assert isinstance(prim.runners[1]['runner']._raw_processor, 
+        assert isinstance(prim.runners[0]['runner']._raw_processor, 
                           vld.required)
         #with pytest.raises(err.ValidationErrorStack) as e:
         #    prim.validate()
@@ -67,20 +68,31 @@ class TestSchema:
         # before implicit allowempty.
         assert prim.runners[3]['runner']._raw_processor is p1
 
+    @pytest.mark.skip
+    def test_move_required_processor_to_top_spot(): assert 0
+
+    @pytest.mark.skip
+    def test_only_one_required_processor_is_added(): assert 0
+
+    @pytest.mark.skip
+    def test_later_required_processor_override_previous(): assert 0
+
 
 class TestPrimitiveTypeSchema:
 
-    def test_adds_primitive_type_processor_first(s, prim):
-        assert prim.runners[0]['runner']._raw_processor is vld.is_primitive_type
+    def test_adds_primitive_type_processor_after_required(s, prim):
+        assert (prim.runners[1]['runner']._raw_processor is 
+                vld.is_primitive_type)
 
 
 class TestArrayTypeSchema:
 
-    def test_adds_array_type_processor_first(s, arr):
-        assert arr.runners[0]['runner']._raw_processor is vld.is_array_type
+    def test_adds_array_type_processor_after_required(s, arr):
+        assert arr.runners[1]['runner']._raw_processor is vld.is_array_type
 
 
 class TestObjectTypeSchema:
 
-    def test_adds_object_type_processor_first(s, obj):
-        assert obj.runners[0]['runner']._raw_processor is vld.is_object_type
+    def test_adds_object_type_processor_after_required(s, obj):
+        assert obj.runners[1]['runner']._raw_processor is vld.is_object_type
+

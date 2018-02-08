@@ -43,11 +43,19 @@ class TestVino:
         result = v.validate(data)
         assert data == result
 
-    def test_obj_required_undef_default(s):
+    def test_required_default(s, logger):
+        from vino.utils import _undef
+        set_def = lambda *a, **kw: 'b' 
+        req = vld.required(default=set_def)
+        v = shm.prim(req, ~vld.isint)
+        logger.info(v.validate())
+
+    def test_obj_required_undef_default(s, logger):
         data = {'c': 33}
         set_def = lambda *a, **kw: 'b' 
+        req = vld.required(default=set_def)
         v = shm.obj(
-            shm.prim(vld.required(default=set_def), ~vld.isint).apply_to('a'),
+            shm.prim(req, ~vld.isint).apply_to('a'),
             shm.prim(vld.isint).apply_to('c'), 
         )
         result = v.validate(data)
@@ -66,10 +74,6 @@ class TestVino:
         )
         rv = data_schm.validate(data)
         assert rv == data
-
-
-
-
 
 
 @pytest.mark.skip

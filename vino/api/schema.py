@@ -49,7 +49,8 @@ class PrimitiveTypeSchema(Schema, ctx.Context):
         for p in processors:
             self._assert_no_qualifiers(p)
         processors = self.add_mandatory_processors(processors)
-        processors = (vld.is_primitive_type,) + processors
+        processors = list(processors)
+        processors[1:1] = [vld.is_primitive_type] # No.2 
         super(PrimitiveTypeSchema, self).__init__(*processors)
 
     def _assert_no_qualifiers(self, processor):
@@ -64,7 +65,8 @@ class ArrayTypeSchema(Schema, ctx.Context):
 
     def __init__(self, *processors):
         processors = self.add_mandatory_processors(processors)
-        processors = (vld.is_array_type,) + processors
+        processors = list(processors)
+        processors[1:1] = [vld.is_array_type] # No.2 
         super(ArrayTypeSchema, self).__init__(
             *processors, qualifier_stack_cls=qls.ItemQualifierStack)
 
@@ -72,7 +74,8 @@ class ObjectTypeSchema(Schema, ctx.Context):
     
     def __init__(self, *processors):
         processors = self.add_mandatory_processors(processors)
-        processors = (vld.is_object_type,) + processors
+        processors = list(processors)
+        processors[1:1] = [vld.is_object_type] # No.2 
         super(ObjectTypeSchema, self).__init__(
             *processors, qualifier_stack_cls=qls.MemberQualifierStack)
 
