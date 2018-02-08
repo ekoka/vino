@@ -79,32 +79,95 @@ class Required(prc.BooleanProcessor, MandatoryClause):
 
     def __init__(self, *a, **kw):
         # default is a kw only argument
-        self.default = kw.pop('default', uls._undef)
-        if self.default is not uls._undef:
-            if callable(self.default):
-                self.default = [self.default]
+        for action_name in ('default', 'override'): 
+            self.set_callback(action_name, kw.pop(action_name, uls._undef))
+        #default = kw.pop('default', uls._undef)
+        #default = kw.pop('default', uls._undef)
+        #if self.default is not uls._undef:
+        #    if callable(self.default):
+        #        self.default = [self.default]
+        #    else:
+        #    # TODO: must also allow processors, i.e. check for run() method
+        #    # TODO: should create an `is_processor()` function.
+        #        try:
+        #            if not self.default:
+        #                raise TypeError
+        #            for c in self.default:
+        #                if not callable(c):
+        #                    raise TypeError
+        #        except TypeError:
+        #            raise err.VinoError(
+        #                '"default" must be a callable or a list of callables')
+
+        super(Required, self).__init__(*a, **kw)
+
+    def set_callback(self, action_name, action):
+        if action is not uls._undef:
+            if callable(action):
+                action = [action]
             else:
             # TODO: must also allow processors, i.e. check for run() method
             # TODO: should create an `is_processor()` function.
                 try:
-                    if not self.default:
+                    if not action:
                         raise TypeError
-                    for c in self.default:
+                    for c in action:
                         if not callable(c):
                             raise TypeError
                 except TypeError:
                     raise err.VinoError(
-                        '"default" must be a callable or a list of callables')
+                        '"{}" must be a callable or a '
+                        'list of callables'.format(action_name))
+        setattr(self, action_name, action)
 
-        super(Required, self).__init__(*a, **kw)
+    #def set_default(self, default):
+    #    if default is not uls._undef:
+    #        if callable(default):
+    #            default = [default]
+    #        else:
+    #        # TODO: must also allow processors, i.e. check for run() method
+    #        # TODO: should create an `is_processor()` function.
+    #            try:
+    #                if not default:
+    #                    raise TypeError
+    #                for c in default:
+    #                    if not callable(c):
+    #                        raise TypeError
+    #            except TypeError:
+    #                raise err.VinoError(
+    #                    '"default" must be a callable or a list of callables')
+    #    self.default = default
+
+    #def set_override(self, override):
+    #    if override is not uls._undef:
+    #        if callable(override):
+    #            override = [override]
+    #        else:
+    #        # TODO: must also allow processors, i.e. check for run() method
+    #        # TODO: should create an `is_processor()` function.
+    #            try:
+    #                if not override:
+    #                    raise TypeError
+    #                for c in override:
+    #                    if not callable(c):
+    #                        raise TypeError
+    #            except TypeError:
+    #                raise err.VinoError(
+    #                    '"override" must be a callable or a list of callables')
+    #    self.override = override
 
     def run(self, data=uls._undef, state=uls._undef):
-        if self.flag and data is uls._undef:
-            if self.default is not uls._undef:
-                for fnc in self.default:
+        if self.flag:
+            if self.override is not uls._undef:
+                for fnc in self.override:
                     data = fnc(data=data, state=state)
-            else:
-                raise err.ValidationError('data is required')
+
+            if data is uls._undef:
+                if self.default is not uls._undef:
+                    for fnc in self.default:
+                        data = fnc(data=data, state=state)
+                else:
+                    raise err.ValidationError('data is required')
         return data
 
 class AllowNull(prc.BooleanProcessor, MandatoryClause): pass
