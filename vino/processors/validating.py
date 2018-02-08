@@ -21,7 +21,8 @@ def is_primitive_type(data, state):
         return data
     # TODO more descriptive message
     raise err.ValidationError(
-        'Wrong type provided. Expected Array type.', type(data))
+        'Wrong type provided. Expected Primitive type, got {}.'.format(
+            type(data).__name__))
 
 def is_array_type(data, state):
     # ensures that data is None or if not set 
@@ -34,8 +35,8 @@ def is_array_type(data, state):
         return list(data)
     # TODO more descriptive message
     raise err.ValidationError(
-        'Wrong type provided. Expected Array type.', 
-        type(data))
+        'Wrong type provided. Expected Array type, got {}.'.format(
+        type(data).__name__))
 
 def is_object_type(data, state):
     if data is None:
@@ -47,8 +48,8 @@ def is_object_type(data, state):
         pass
     # TODO more descriptive message
     raise err.ValidationError(
-        'Wrong type provided. Expected Object type.', 
-        type(data))
+        'Wrong type provided. Expected Object type, got {}'.format( 
+        type(data).__name__))
 
 class MandatoryClause:
     __clause_name__ = None
