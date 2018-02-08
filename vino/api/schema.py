@@ -12,6 +12,7 @@ class Schema:
     __mandatory_clauses__ = ('required', 'empty', 'null')
     
     def add_mandatory_processors(self, processors):
+        processors = self.set_required_clause(processors)
         inactive = self._inactive_mandatories(processors)
         for p in Schema.__mandatory_clauses__: # guarantees the order
             if p in inactive:
@@ -30,9 +31,20 @@ class Schema:
                 continue
         return set(mandatory_clauses)
 
-    def add_required_clause(self, processors):
-        rv = (vld.required,) + processors
-        return rv
+    def set_required_clause(self, processors):
+        rv = []
+        required = None
+        for p in processors:
+            try:
+                if p.__clause_name__=='required':
+                    required = p
+                else:
+                    rv.append(p)
+            except AttributeError:
+                rv.append(p)
+        if required is None:
+            required = vld.required
+        return (required,) + tuple(rv)
 
     def add_empty_clause(self, processors):
         rv = processors + (vld.rejectempty,)

@@ -49,7 +49,7 @@ class TestSchema:
         p1 = vld.required()
         prim = shm.PrimitiveTypeSchema(p0, p1)
         assert len(prim.runners)==5
-        assert prim.runners[2]['runner']._raw_processor is p1
+        assert prim.runners[0]['runner']._raw_processor is p1
 
     def test_doesnt_add_implicit_allowempty_processor_if_one_provided(s):
         p0 = lambda *a: None
