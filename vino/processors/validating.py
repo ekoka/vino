@@ -78,97 +78,14 @@ class Required(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'required'
     __inverse__=Optional
 
-    def __init__(self, *a, **kw):
-        # default is a kw only argument
-        for action_name in ('default', 'override'): 
-            self.set_callback(action_name, kw.pop(action_name, uls._undef))
-        #default = kw.pop('default', uls._undef)
-        #default = kw.pop('default', uls._undef)
-        #if self.default is not uls._undef:
-        #    if callable(self.default):
-        #        self.default = [self.default]
-        #    else:
-        #    # TODO: must also allow processors, i.e. check for run() method
-        #    # TODO: should create an `is_processor()` function.
-        #        try:
-        #            if not self.default:
-        #                raise TypeError
-        #            for c in self.default:
-        #                if not callable(c):
-        #                    raise TypeError
-        #        except TypeError:
-        #            raise err.VinoError(
-        #                '"default" must be a callable or a list of callables')
-
-        super(Required, self).__init__(*a, **kw)
-
-    def set_callback(self, action_name, action):
-        if action is not uls._undef:
-            if callable(action):
-                action = [action]
-            else:
-            # TODO: must also allow processors, i.e. check for run() method
-            # TODO: should create an `is_processor()` function.
-                try:
-                    if not action:
-                        raise TypeError
-                    for c in action:
-                        if not callable(c):
-                            raise TypeError
-                except TypeError:
-                    raise err.VinoError(
-                        '"{}" must be a callable or a '
-                        'list of callables'.format(action_name))
-        setattr(self, action_name, action)
-
-    #def set_default(self, default):
-    #    if default is not uls._undef:
-    #        if callable(default):
-    #            default = [default]
-    #        else:
-    #        # TODO: must also allow processors, i.e. check for run() method
-    #        # TODO: should create an `is_processor()` function.
-    #            try:
-    #                if not default:
-    #                    raise TypeError
-    #                for c in default:
-    #                    if not callable(c):
-    #                        raise TypeError
-    #            except TypeError:
-    #                raise err.VinoError(
-    #                    '"default" must be a callable or a list of callables')
-    #    self.default = default
-
-    #def set_override(self, override):
-    #    if override is not uls._undef:
-    #        if callable(override):
-    #            override = [override]
-    #        else:
-    #        # TODO: must also allow processors, i.e. check for run() method
-    #        # TODO: should create an `is_processor()` function.
-    #            try:
-    #                if not override:
-    #                    raise TypeError
-    #                for c in override:
-    #                    if not callable(c):
-    #                        raise TypeError
-    #            except TypeError:
-    #                raise err.VinoError(
-    #                    '"override" must be a callable or a list of callables')
-    #    self.override = override
-
     def run(self, data=uls._undef, state=uls._undef):
-        if self.flag:
-            if self.override is not uls._undef:
-                for fnc in self.override:
-                    data = fnc(data=data, state=state)
+        if getattr(self, 'override', None):
+            data = self.run_override(data=data, state=state)
 
-            if data is uls._undef:
-                if self.default is not uls._undef:
-                    for fnc in self.default:
-                        data = fnc(data=data, state=state)
-                else:
-                    raise err.ValidationError('data is required')
+        if self.flag and (data is uls._undef):
+            if getattr(self, 'default', None):
+                return self.run_default(data=data, state=state)
+            return self.save_or_fail(data, state, message='data is required')
         return data
 
 class AllowNull(prc.BooleanProcessor, MandatoryClause): pass
@@ -176,9 +93,18 @@ class RejectNull(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'null'
     __inverse__ =AllowNull
 
+    #def run(self, data=uls._undef, state=uls._undef):
+    #    if self.flag and data is None:
+    #        raise err.ValidationError('data must not be null')
+    #    return data
+
     def run(self, data=uls._undef, state=uls._undef):
-        if self.flag and data is None:
-            raise err.ValidationError('data must not be null')
+        if getattr(self, 'override', None):
+            data = self.run_override(data=data, state=state)
+        if self.flag and (data is None):
+            if getattr(self, 'default', None):
+                return self.run_default(data=data, state=state)
+            return self.save_or_fail(data, state, message='data must not be null dude')
         return data
 
 class AllowEmpty(prc.BooleanProcessor, MandatoryClause): pass
@@ -186,9 +112,18 @@ class RejectEmpty(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'empty'
     __inverse__ = AllowEmpty
 
+    #def run(self, data=uls._undef, state=uls._undef):
+    #    if self.flag and data in ((), {}, '', set(), []):
+    #        raise err.ValidationError('data must not be empty')
+    #    return data
     def run(self, data=uls._undef, state=uls._undef):
-        if self.flag and data in ((), {}, '', set(), []):
-            raise err.ValidationError('data must not be empty')
+        if getattr(self, 'override', None):
+            data = self.run_override(data=data, state=state)
+
+        if self.flag and (data in ((), {}, '', set(), [])):
+            if getattr(self, 'default', None):
+                return self.run_default(data=data, state=state)
+            return self.save_or_fail(data, state, message='data must not be empty')
         return data
 
 # aliases

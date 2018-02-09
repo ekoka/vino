@@ -71,7 +71,7 @@ class TestBooleanProcessor:
         BP.run = lambda *a: a[0]
         for i in [None, [], {}, '', 2]:
             with pytest.raises(err.VinoError) as e:
-                BP(i)
+                BP(flag=i)
             assert 'expected bool' in str(e.value).lower()
 
     def test_instance_created_with_default_value(s, BP):
@@ -127,13 +127,13 @@ class TestRequiredProcessor:
         assert 'data is required' in str(e.value)
             
     def test_not_optional_rejects_absent_value(s):
-        v = vld.optional(False)
+        v = vld.optional(flag=False)
         with pytest.raises(err.ValidationError) as e:
             v.run()
         assert 'data is required' in str(e.value)
 
     def test_not_required_accepts_absent_value(s):
-        v = vld.required(False)
+        v = vld.required(flag=False)
         rv = v.run()
         assert rv is uls._undef
 
@@ -159,12 +159,12 @@ class TestNullProcessor:
         assert v.flag is False
 
     def test_allownull_set_to_false_is_rejectnull_set_to_true(s):
-        v = vld.allownull(False)
+        v = vld.allownull(flag=False)
         assert isinstance(v, vld.rejectnull)
         assert v.flag is True
 
     def test_rejectnull_accepts_empty_and_false_values(s):
-        v = vld.allownull(False)
+        v = vld.allownull(flag=False)
         for d in ['',{},[],(),set(),False,0]:
             assert v.run(d)==d
 
@@ -177,7 +177,7 @@ class TestEmptyProcessor:
             assert 'must not be empty' in str(e.value)
 
     def test_allowempty(s):
-        v = vld.rejectempty(False)
+        v = vld.rejectempty(flag=False)
         for d in ['',{},[],(),set()]:
             assert v.run(d)==d
 
@@ -187,11 +187,11 @@ class TestEmptyProcessor:
         assert v.flag is False
 
     def test_allowempty_set_to_false_is_rejectempty(s):
-        v = vld.allowempty(False)
+        v = vld.allowempty(flag=False)
         assert isinstance(v, vld.rejectempty)
         assert v.flag is True
 
     def test_rejectempty_accepts_None_and_False_values(s):
-        v = vld.allowempty(False)
+        v = vld.allowempty(flag=False)
         for d in [None,False,0]:
             assert v.run(d)==d

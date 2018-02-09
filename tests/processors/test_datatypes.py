@@ -20,7 +20,7 @@ class TestPrimitiveTypeProcessor:
 
     def test_raises_ValidationError_on_non_primitives(s):
         p = vld.PrimitiveTypeProcessor()
-        err_msg = 'wrong type provided. expected array type'
+        err_msg = 'wrong type provided. expected primitive type'
         with pytest.raises(err.ValidationError) as exc:
             p.run([], None)
         assert err_msg in str(exc.value).lower()
@@ -60,7 +60,7 @@ class TestArrayTypeProcessor:
             rv = p.run(set('abcd'), None)
         error = e.value
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is set
+        assert 'got set' in e.value.args[0].lower()
 
     def test_rejects_dict(s):
         p = vld.ArrayTypeProcessor()
@@ -68,7 +68,7 @@ class TestArrayTypeProcessor:
             rv = p.run({'a':'a', 'b':'c', 'c':'d'}, None)
         error = e.value
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is dict
+        assert 'got dict' in e.value.args[0].lower()
 
     def test_rejects_str(s):
         p = vld.ArrayTypeProcessor()
@@ -76,7 +76,7 @@ class TestArrayTypeProcessor:
             rv = p.run('abcd', None)
         error = e.value
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is str
+        assert 'got str' in e.value.args[0].lower()
 
 
 class TestObjectTypeProcessor:
@@ -111,7 +111,7 @@ class TestObjectTypeProcessor:
         with pytest.raises(err.ValidationError) as e:
             rv = p.run(value, None)
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is list
+        assert 'got list' in e.value.args[0].lower()
 
     def test_validation_rejects_tuple_type(s):
         p = vld.ObjectTypeProcessor()
@@ -119,7 +119,7 @@ class TestObjectTypeProcessor:
         with pytest.raises(err.ValidationError) as e:
             rv = p.run(value, None)
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is tuple
+        assert 'got tuple' in e.value.args[0].lower()
 
     def test_validation_rejects_strings(s):
         p = vld.ObjectTypeProcessor()
@@ -127,7 +127,7 @@ class TestObjectTypeProcessor:
         with pytest.raises(err.ValidationError) as e:
             rv = p.run(value, None)
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is str
+        assert 'got str' in e.value.args[0].lower()
 
     def test_validation_rejects_empty_strings(s):
         p = vld.ObjectTypeProcessor()
@@ -135,7 +135,7 @@ class TestObjectTypeProcessor:
         with pytest.raises(err.ValidationError) as e:
             rv = p.run(value, None)
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is str
+        assert 'got str' in e.value.args[0].lower()
 
     def test_validation_rejects_empty_list(s):
         p = vld.ObjectTypeProcessor()
@@ -143,7 +143,7 @@ class TestObjectTypeProcessor:
         with pytest.raises(err.ValidationError) as e:
             rv = p.run(value, None)
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is list
+        assert 'got list' in e.value.args[0].lower()
 
     def test_validation_rejects_empty_tuple(s):
         p = vld.ObjectTypeProcessor()
@@ -151,7 +151,7 @@ class TestObjectTypeProcessor:
         with pytest.raises(err.ValidationError) as e:
             rv = p.run(value, None)
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is tuple
+        assert 'got tuple' in e.value.args[0].lower()
         
     def test_validation_rejects_list_of_tuples(s):
         p = vld.ObjectTypeProcessor()
@@ -160,5 +160,5 @@ class TestObjectTypeProcessor:
             rv = p.run(value, None)
         error = e.value
         assert 'wrong type' in e.value.args[0].lower()
-        assert e.value.args[1] is tuple
+        assert 'got tuple' in e.value.args[0].lower()
 
