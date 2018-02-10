@@ -1,3 +1,4 @@
+from collections import namedtuple
 from .. utils import _undef
 from .. import errors as err
 
@@ -24,18 +25,69 @@ class Runner:
             pass
         self._raw_processor = processor
         self.name = getattr(processor, 'name', None)
-        self.processor = self._valid_processor(processor)
+        self.processor = self._prepare_processor(processor)
 
-    def _valid_processor(self, processor):
-        if hasattr(processor, 'run'):
-            return lambda *a, **kw: processor.run(*a, **kw)
-        if callable(processor):
-            return processor
-        name = self.name or repr(processor)
-        raise err.VinoError('Invalid Processor {}'.format(name))
+    def _prepare_processor(self, processor):
+        nt = namedtuple('processor', 'run default override failsafe')
+        default = getattr(processor, 'default', None)
+        override = getattr(processor, 'override', None)
+        failsafe = getattr(processor, 'failsafe', None)
+        run = getattr(processor, 'run', None)
+        if run is None: 
+            if callable(processor):
+                run = processor
+            else:
+                name = getattr(processor, 'name', None) or repr(processor)
+                raise err.VinoError('Invalid Processor {}'.format(name))
+        return nt(run, default, override, failsafe)
+
+    def run_override(self, override=None, data=_undef, state=None):
+        if override:
+            for fnc in override:
+                data = fnc(data=data, state=state)
+        return data
+
+    def run_default(self, default=None, data=_undef, state=None):
+        if default:
+            for fnc in default:
+                data = fnc(data=data, state=state)
+        return data
+
+    def run_failsafe(self, failsafe, data=_undef, state=None):
+        if failsafe:
+            for fnc in failsafe:
+                data = fnc(data=data, state=state)
+            return data
+        raise err.ValidationError('failsafe')
+
+    def save_or_fail(
+        self, failsafe, error, data=_undef, state=None, message=None):
+        try:
+            rv = self.run_failsafe(failsafe, data=data, state=state)
+        except err.ValidationError as e:
+            raise error
+        return rv
 
     def run(self, data=_undef, state=None):
-        return self.processor(data, state)
+        processor = self.processor
+
+        # override
+        if processor.override:
+            data = self.run_override(override=processor.override, data=data,
+                                     state=state)
+
+        # default when data is missing
+        if data is _undef and processor.default:
+            data = self.run_default(processor.default, data=data, state=state)
+
+        try:
+            # run
+            data = processor.run(data, state)
+        except err.ValidationError as error:
+            # save or fail
+            data = self.save_or_fail(failsafe=processor.failsafe, error=error,
+                                     data=data, state=state)
+        return data
 
 
 class RunnerStack:

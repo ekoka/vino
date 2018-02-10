@@ -29,36 +29,6 @@ class Processor:
                         'list of callables'.format(action_name))
             setattr(self, action_name, action)
 
-    def run_override(self, data=_undef, state=_undef):
-        override = getattr(self, 'override', None)
-        if override:
-            for fnc in override:
-                data = fnc(data=data, state=state)
-        return data
-
-    def run_default(self, data=_undef, state=_undef):
-        default = getattr(self, 'default', None)
-        if default:
-            for fnc in default:
-                data = fnc(data=data, state=state)
-        return data
-
-    def run_failsafe(self, data=_undef, state=_undef):
-        failsafe = getattr(self, 'failsafe', None)
-        if failsafe:
-            for fnc in failsafe:
-                data = fnc(data=data, state=state)
-            return data
-        return _undef
-
-    def save_or_fail(self, data=_undef, state=_undef, message=None):
-        rv = self.run_failsafe(data, state)
-        if rv is _undef:
-            if message is None:
-                message = 'validation failed'
-            raise err.ValidationError(message)
-        return rv
-
 class polymorphic(object):
 
     def __init__(self, fnc):
@@ -150,9 +120,9 @@ class BooleanProcessor(Processor, metaclass=BooleanProcessorMeta):
     __default_value__ = True
 
     def __init__(self, **kwargs):
-        flag = kwargs.pop('flag', _undef)
+        flag = kwargs.pop('flag', None)
         mapping = kwargs.pop('mapping', None)
-        if flag is _undef:
+        if flag is None:
             flag = self.__class__.__default_value__
 
         if flag not in BooleanProcessor.__accepted_values__:

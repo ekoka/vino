@@ -69,7 +69,7 @@ class TestBooleanProcessor:
 
     def test_wrong_value_set_on_instance_raises_error(s, BP):
         BP.run = lambda *a: a[0]
-        for i in [None, [], {}, '', 2]:
+        for i in [[], {}, '', 2]:
             with pytest.raises(err.VinoError) as e:
                 BP(flag=i)
             assert 'expected bool' in str(e.value).lower()

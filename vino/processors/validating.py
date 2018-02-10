@@ -78,14 +78,9 @@ class Required(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'required'
     __inverse__=Optional
 
-    def run(self, data=uls._undef, state=uls._undef):
-        if getattr(self, 'override', None):
-            data = self.run_override(data=data, state=state)
-
-        if self.flag and (data is uls._undef):
-            if getattr(self, 'default', None):
-                return self.run_default(data=data, state=state)
-            return self.save_or_fail(data, state, message='data is required')
+    def run(self, data=uls._undef, state=None):
+        if self.flag and data is uls._undef:
+            raise err.ValidationError('data is required')
         return data
 
 class AllowNull(prc.BooleanProcessor, MandatoryClause): pass
@@ -93,18 +88,9 @@ class RejectNull(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'null'
     __inverse__ =AllowNull
 
-    #def run(self, data=uls._undef, state=uls._undef):
-    #    if self.flag and data is None:
-    #        raise err.ValidationError('data must not be null')
-    #    return data
-
-    def run(self, data=uls._undef, state=uls._undef):
-        if getattr(self, 'override', None):
-            data = self.run_override(data=data, state=state)
-        if self.flag and (data is None):
-            if getattr(self, 'default', None):
-                return self.run_default(data=data, state=state)
-            return self.save_or_fail(data, state, message='data must not be null dude')
+    def run(self, data=uls._undef, state=None):
+        if self.flag and data is None:
+            raise err.ValidationError('data must not be null')
         return data
 
 class AllowEmpty(prc.BooleanProcessor, MandatoryClause): pass
@@ -112,18 +98,9 @@ class RejectEmpty(prc.BooleanProcessor, MandatoryClause):
     __clause_name__ = 'empty'
     __inverse__ = AllowEmpty
 
-    #def run(self, data=uls._undef, state=uls._undef):
-    #    if self.flag and data in ((), {}, '', set(), []):
-    #        raise err.ValidationError('data must not be empty')
-    #    return data
-    def run(self, data=uls._undef, state=uls._undef):
-        if getattr(self, 'override', None):
-            data = self.run_override(data=data, state=state)
-
-        if self.flag and (data in ((), {}, '', set(), [])):
-            if getattr(self, 'default', None):
-                return self.run_default(data=data, state=state)
-            return self.save_or_fail(data, state, message='data must not be empty')
+    def run(self, data=uls._undef, state=None):
+        if self.flag and data in ((), {}, '', set(), []):
+            raise err.ValidationError('data must not be empty')
         return data
 
 # aliases
@@ -140,7 +117,7 @@ class isnotint(prc.BooleanProcessor):
         self.onfail = onfail
         self.isint = isnotint.__inverse__(cast=cast, bool_as_int=bool_as_int)
 
-    def run(self, data=uls._undef, state=uls._undef):
+    def run(self, data=uls._undef, state=None):
         try:
             self.isint.run(data)
         except err.ValidationError:
@@ -158,7 +135,7 @@ class isint(prc.BooleanProcessor):
         self.cast = cast
         self.bool_as_int = bool_as_int
 
-    def run(self, data=uls._undef, state=uls._undef):
+    def run(self, data=uls._undef, state=None):
         data = self._cast(data)
         if not uls.is_intlike(data, bool_as_int=self.bool_as_int):
             #TODO: better message

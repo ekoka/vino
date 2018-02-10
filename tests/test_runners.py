@@ -13,7 +13,7 @@ class TestRunner:
         assert r.run(randstr)==randstr
         # object
         class p: 
-            def run(self, data, context): return data
+            def run(self, data, state): return data
         processor = p()
         r = runners.Runner(processor)
         assert r.run(randstr)==randstr
@@ -36,6 +36,7 @@ class TestRunner:
         r.run('x')
         assert mk.called
 
+    @pytest.mark.skip #TODO: doesn't apply anymore, must be changed
     def test_if_processor_has_run_method_Runner_wraps_with_function(s):
         class x:
             was_called = False
@@ -46,9 +47,12 @@ class TestRunner:
         x_inst = x()
         r = runners.Runner(x_inst)
         assert x_inst.was_called is False
-        assert r.processor() == 'abc'
+        assert r.processor.run() == 'abc'
         assert r.processor is not x_inst
         assert x_inst.was_called is True
+
+    @pytest.mark.skip
+    def test_processor_wrapped_in_namedtuple(s): assert 0
 
     @pytest.mark.skip
     def test_Runner_calls_fail_function_on_processor_if_set(s):
