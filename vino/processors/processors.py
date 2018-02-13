@@ -8,26 +8,26 @@ class Processor:
     def __init__(self, **kw):
         for action_name in ('default', 'override', 'failsafe'):
             action = kw.pop(action_name, None)
-            self.set_callback(action_name, action)
+            if action:
+                self.set_callback(action_name, action)
 
     def set_callback(self, action_name, action):
-        if action is not None:
-            if callable(action):
-                action = [action]
-            else:
-            # TODO: must also allow processors, i.e. check for run() method
-            # TODO: should create an `is_processor()` function.
-                try:
-                    if not action:
+        if callable(action):
+            action = [action]
+        else:
+        # TODO: must also allow processors, i.e. check for run() method
+        # TODO: should create an `is_processor()` function.
+            try:
+                if not action:
+                    raise TypeError
+                for c in action:
+                    if not callable(c):
                         raise TypeError
-                    for c in action:
-                        if not callable(c):
-                            raise TypeError
-                except TypeError:
-                    raise err.VinoError(
-                        '"{}" must be a callable or a '
-                        'list of callables'.format(action_name))
-            setattr(self, action_name, action)
+            except TypeError:
+                raise err.VinoError(
+                    '"{}" must be a callable or a '
+                    'list of callables'.format(action_name))
+        setattr(self, action_name, action)
 
 class polymorphic(object):
 

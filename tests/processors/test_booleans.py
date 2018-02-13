@@ -88,7 +88,6 @@ class TestBooleanProcessor:
         def someuserdefinedfnc(): pass
         assert someuserdefinedfnc.__clause_name__==M.__clause_name__
 
-
 class TestMandatoryProcessors:
     def test_processor_wrapped_by_MandatoryClause_keeps_same_api(s, Mandatory):
         M = Mandatory

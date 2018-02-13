@@ -3,6 +3,10 @@ from .. utils import _undef
 from .. import errors as err
 
 class Runner:
+
+    ProcProxy = namedtuple('ProcProxy', 
+                        'run default override failsafe raw_processor')
+
     def __init__(self, processor):
         """ Provides a simple interface to run a process. 
         
@@ -25,10 +29,10 @@ class Runner:
             pass
         self._raw_processor = processor
         self.name = getattr(processor, 'name', None)
-        self.processor = self._prepare_processor(processor)
+        self.processor = self.get_processor_proxy(processor)
 
-    def _prepare_processor(self, processor):
-        nt = namedtuple('processor', 'run default override failsafe')
+    @classmethod
+    def get_processor_proxy(cls, processor):
         default = getattr(processor, 'default', None)
         override = getattr(processor, 'override', None)
         failsafe = getattr(processor, 'failsafe', None)
@@ -39,7 +43,7 @@ class Runner:
             else:
                 name = getattr(processor, 'name', None) or repr(processor)
                 raise err.VinoError('Invalid Processor {}'.format(name))
-        return nt(run, default, override, failsafe)
+        return cls.ProcProxy(run, default, override, failsafe, processor)
 
     def run_override(self, override=None, data=_undef, state=None):
         if override:
