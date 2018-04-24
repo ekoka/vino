@@ -4,7 +4,7 @@ class ValidationError(Exception):
     interrupt_validation = False
     def __init__(self, *a, **kw):
         # interrupt_validation is a keyword-only arg
-        self.interrupt_validation = kw.pop('interrupt_validation', False)
+        self.interrupt_validation = kw.pop('interrupt_validation', True)
         super(ValidationError, self).__init__(*a)
 
 class ValidationErrorStack(ValidationError):

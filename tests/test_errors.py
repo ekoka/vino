@@ -39,10 +39,9 @@ class TestValidationErrorStack:
             processors += t,f
         processors = tuple((p, None) for p in processors)
         rs = runners.RunnerStack(None, *processors)
-        try:
+        with pytest.raises(err.ValidationErrorStack) as es:
             rs.run('some value')
-        except err.ValidationErrorStack as es:
-            assert len(es)==len(fails_continue)
+            assert len(es.value)==len(fails_continue)
 
     def test_errors_each_have_value_at_failure_time(self, tags, fails_continue):
         processors = []
@@ -50,12 +49,12 @@ class TestValidationErrorStack:
             processors += t,f
         processors = tuple((p, None) for p in processors)
         rs = runners.RunnerStack(None, *processors)
-        try:
+        with pytest.raises(err.ValidationErrorStack) as es:
             rs.run('some value')
-        except err.ValidationErrorStack as es:
-            assert es[0].data=='<b>some value</b>'
-            assert es[1].data=='<i><b>some value</b></i>'
-            assert es[2].data=='<u><i><b>some value</b></i></u>'
+            e = es.value
+            assert e[0].data=='<b>some value</b>'
+            assert e[1].data=='<i><b>some value</b></i>'
+            assert e[2].data=='<u><i><b>some value</b></i></u>'
 
     def test_empty_flag_true_if_has_errors(self):
         stack = err.ValidationErrorStack('stack')

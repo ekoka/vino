@@ -93,6 +93,13 @@ class TestArrayTypeSchema:
 
 class TestObjectTypeSchema:
 
-    def test_adds_object_type_processor_after_required(s, obj):
-        assert obj.runners[1]['runner']._raw_processor is vld.is_object_type
+    def test_adds_object_type_processor_after_required(s):
+        o = shm.obj(shm.prim().apply_to('field_1'))
+        assert o.runners[1]['runner']._raw_processor is vld.is_object_type
+
+    def test_should_reject_prim(s):
+        o = shm.obj(shm.prim().apply_to('field_1'))
+        with pytest.raises(err.ValidationErrorStack) as e:
+            o.validate('some string')
+        assert 'Wrong type provided' in str(e.value[0])
 

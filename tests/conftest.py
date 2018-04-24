@@ -50,9 +50,9 @@ def tags():
 @pytest.fixture
 def fails_continue():
     def fail1(value, state):
-        raise err.ValidationError('first failure', False)
+        raise err.ValidationError('first failure', interrupt_validation=False)
     def fail2(value, state):
-        raise err.ValidationError('second failure', False)
+        raise err.ValidationError('second failure', interrupt_validation=False)
     def fail3(value, state):
-        raise err.ValidationError('third failure', False)
+        raise err.ValidationError('third failure', interrupt_validation=False)
     return fail1, fail2, fail3
