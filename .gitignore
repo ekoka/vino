@@ -1,6 +1,7 @@
 gitmsg.gitcommit
 *.pyc
 .cache
+.pytest*
 tsk
 uwsgi.ini
 website/*.html

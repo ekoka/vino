@@ -1,5 +1,6 @@
 from . import utils as uls 
 from .processors.runners import RunnerStack
+from . import errors 
 
 class Context:
     ''' The Context represent the primary scope of influence of a processor.
@@ -19,9 +20,13 @@ class Context:
         self.expand(*processors)
 
     def _tuplefy(self, processor):
+        # ensures that processor is returned in tuple form, with actual
+        # processor on the left and qualifiers, if any, on the right.
         try: 
+            # return (processor, ) + (qualifier1, qualifier2, ...)
             return processor[:1] + processor[1:]
         except (TypeError, IndexError) as e:
+            # or return (processor, None)
             return (processor, None)
 
     def spawn(self):
@@ -57,18 +62,21 @@ class Context:
 
     def apply_to(self, *qualifiers):
         tpl = (self,) + qualifiers
+        # tpl is already in tuple form, but still call _tuplefy in case further
+        # logic is added to it in the future.
         return self._tuplefy(tpl)
 
     def validate(self, data=uls._undef):
         """ This method is typically called as an entry point for a root
         Context object. When a Context is a subset part of another Context, its
         `run()` method is called instead by a Runner, receiving all necessary
-        data and metadata to apply its processes on the relevant part of it.
+        data and metadata to apply its processes on the relevant part of the 
+        data.
         """
         return self.run(data, self)
 
     def run(self, data, context):
-        """ Let's quack like a Processor """
+        """ Let's quack like a Processor, i.e. Context treated as Processor """
         # default behaviour is to simply return a copy of the data
         return self.runners.run(data)
 
@@ -79,6 +87,8 @@ class Context:
         }
 
     def init_matches(self): 
+        # TODO: This seems a bit circuitous. Should the Context really be the
+        # one to initiate matches? I should think about this some more.
         if self.qualifier_stack_cls:
             return self.qualifier_stack_cls.init_matches()
 

@@ -116,6 +116,11 @@ class RunnerStack:
         self._runners = _runners
 
     def add(self, *processors):
+        # processors should be a list of tuples with each item having the 
+        # either of these structures:
+        # (processor, q1, q2, q3)
+        # (processor, None)
+        # (processor, False)
         for processor in processors:
             try:
                 processor, qualifiers = processor[0], processor[1:]
@@ -125,6 +130,8 @@ class RunnerStack:
                     'tuples.')
             runner = Runner(processor)
             if len(qualifiers)==1 and qualifiers[0] is False:
+                # this situation arises when the processor does not take a 
+                # qualifier.
                 self.runners.append({'runner': runner, 'qualifiers': False})
             else:
                 #TODO: clean this up. If the runner has qualifiers then 
@@ -138,6 +145,7 @@ class RunnerStack:
             # emtpy stack
             raise err.VinoError(
                 'Cannot add qualifier without specifying a processor')
+        # let' grab the runner we just appended from `self.add()`
         runner = self.runners[-1]
         if runner['qualifiers'] is False:
             raise err.VinoError('The processor does not accept qualifiers')
@@ -151,6 +159,7 @@ class RunnerStack:
                     'A QualifierStack constructor must be specified for this '
                     'Context to enable implicit creation of QualifierStack '
                     'objects.')
+            # create qualifier stack for this runner stack
             runner['qualifiers'] = self.context.qualifier_stack_cls()
         # merge with previous qualifiers
         runner['qualifiers'].add(*qualifiers)

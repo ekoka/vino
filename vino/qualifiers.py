@@ -5,12 +5,21 @@ class Qualifier:
     def qualify(self, item, index=None): pass
 
 class ItemQualifierStack:
+    """
+    In JSON, this would conceptually be the stack of qualifiers that drives the
+    processing of an Array.
+    """
 
     def __init__(self, *qualifiers):
         self.add(*qualifiers)
 
     @property
     def qualifiers(self):
+        # The qualifier stacks. Note that unlike the 'calls' stack, the
+        # 'indexes' stack is a set, not a list, thus it cannot influence the
+        # order in which properties are processed.
+        # if such control is needed, simply declare processing one after
+        # the other during Context creation.
         if not hasattr(self, '_qualifiers'):
             self._qualifiers = {
                 'indexes': set(),
@@ -26,18 +35,29 @@ class ItemQualifierStack:
         for qualifier in qualifiers:
             if uls.is_intlike(qualifier):
                 self.qualifiers['indexes'].add(qualifier)
+                # when a qualifier is an integer it's added to the 'indexes'
+                # stack
             elif uls.is_iterable(qualifier):
+                # when a qualifier is iterable it's added to the 'indexes' 
+                # stack as well
                 [self.qualifiers['indexes'].add(i) for i in qualifier]
             elif callable(qualifier):
+                # when a qualifier is callable it's added to the 'calls' 
+                # stack
                 self.qualifiers['calls'].append(qualifier)
             else:
+                # array structures' qualifiers are limited to 'indexes' and
+                # 'calls', anything else is an error.
                 # TODO: more descriptive error
                 raise errors.VinoError('Invalid Qualifier')
 
     def index_match(self, idx):
+        # is the provided index present in the 'indexes' stack?
         return idx in self.qualifiers['indexes']
 
     def call_match(self, idx, data):
+        # if any of the 'calls' stack qualifiers returns True for the provided  
+        # index, return True
         for call in self.qualifiers['calls']:
             if call(idx, data):
                 return True
@@ -49,20 +69,22 @@ class ItemQualifierStack:
         return dict(
             by_index=set(),
             by_call=set(),
-            not_matched=set(),
+            #not_matched=set(),
         )
 
     def _get_matches(self, state):
-        # TODO: When the state is part of its own class, it should be passed
+        # TODO: When the state has its own class, it should be passed
         # to the qualifier.
         if state.get('matches') is None:
             # None means we're initializing the state for Array type
             state['matches'] = dict(
                 by_index=set(),
                 by_call=set(),
-                not_matched=set(),
+                #not_matched=set(),
             )
         elif state['matches'].get('by_index') is None:
+            # if the state is not None, but the 'by_index' key is not set on 
+            # the matches, not even to an empty set, something is off.
             #TODO: better error message
             raise err.VinoError('unstable state')
         return state['matches']
@@ -78,17 +100,29 @@ class ItemQualifierStack:
                 matches['by_call'].add(i)
                 rv.append(runner.run(d, state))
             else:
-                matches['not_matched'].add(i)
+                #matches['not_matched'].add(i)
                 rv.append(d)
         return rv
 
 class MemberQualifierStack:
+    """
+    In JSON, this would conceptually be the stack of qualifiers that drives the
+    processing of an Object.
+    It primarily collects keys declared as part of the addition of a processor.
+    These keys correspond to the data object's properties to which the
+    processor will be applied.
+    """
 
     def __init__(self, *qualifiers):
         self.add(*qualifiers)
 
     @property
     def qualifiers(self):
+        # The qualifier stacks. Note that unlike the 'calls' stack, the
+        # 'keys' stack is a set, not a list, thus it cannot influence the
+        # order in which properties are processed.
+        # if such control is needed, simply declare processors one after
+        # the other during Context creation.
         if not hasattr(self, '_qualifiers'):
             self._qualifiers = {
                 'keys': set(),
@@ -99,6 +133,7 @@ class MemberQualifierStack:
     def add(self, *qualifiers):
         for qualifier in qualifiers:
             if uls.is_str(qualifier):
+                # if the qualifier is a string add it to the 'keys' stack.
                 self.qualifiers['keys'].add(qualifier)
             elif uls.is_iterable(qualifier):
                 [self.qualifiers['keys'].add(i) for i in qualifier]
@@ -135,7 +170,7 @@ class MemberQualifierStack:
         return dict(
             by_key=set(),
             by_call=set(),
-            not_matched=set(),
+            #not_matched=set(),
         )
 
     def apply(self, data, runner, state):
@@ -149,7 +184,7 @@ class MemberQualifierStack:
                 matches['by_call'].add(k)
                 rv[k] = runner.run(value, state)
             else:
-                matches['not_matched'].add(k)
+                #matches['not_matched'].add(k)
                 rv[k] = value
 
         self._process_missing_keys(rv, matches['by_key'], runner, state)

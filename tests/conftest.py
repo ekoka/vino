@@ -16,7 +16,9 @@ def pytest_itemcollected(item):
 @pytest.fixture('session')
 def logger():
     rv = logging.getLogger('vino')
-    rv.addHandler(logging.FileHandler('logs/codin.log'))
+    rv.setLevel(logging.INFO)
+    fh = logging.FileHandler('logs/coding.log')
+    rv.addHandler(fh)
     return rv
 
 @pytest.fixture

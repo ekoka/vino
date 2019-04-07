@@ -407,7 +407,7 @@ class TestRunnerStack:
         error = exc_info.value
         assert 'must be given a context' in str(error).lower()
 
-    def test_cant_add_qualifier_if_context_has_no_QStack_class(self, tags):
+    def test_cannot_add_qualifier_if_context_has_no_QStack_class(self, tags):
         processors = ((t, None) for t in tags)
         c = ctx.Context(qualifier_stack_cls=quals.ItemQualifierStack)
         rs = RunnerStack(c)
@@ -580,3 +580,5 @@ class TestRunnerStack:
     @pytest.mark.skip
     def test_error_raised_in_qualifier_run_should_propagate_to_runner_stack():
         assert 0
+
+

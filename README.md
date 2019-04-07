@@ -1,5 +1,5 @@
 """ 
-Vino (pronounced vee-noh) is a Python data validation library that aims to be quick to learn, easy to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data modeled using the main JSON data types, namely Number, String, Boolean, Array, Object, and null, once they've been converted to their Python counterparts: int or float, string, boolean, list, dict, and None.
+Vino (pronounced vee-noh) is a Python data validation library that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data modeled using the main JSON data types, namely Number, String, Boolean, Array, Object, and null, once they've been converted to their Python counterparts: int or float, string, boolean, list, dict, and None.
 
 The rational behind Vino: 
 
@@ -678,4 +678,15 @@ be edited so we need to pop it regardless.
     - empty, null
     - post_validation
 """
+
+---
+# Modifiers:
+- default: 
+    a `default` modifier will be called upon when no value (undef) has been given to the processor it is applied to. It will return a value for the processor to work with.
+
+- override: 
+    an `override` modifier applied to a processor will intercept the value passed to the processor. It will then discard, replace, or modify it and will submit the result to the processor.
+
+- failsafe: 
+    a `failsafe` modifier, when applied to a processor will intervene after the processor has failed validation. Its returned value is what is passed to the remaining validation chain.
 

@@ -1,6 +1,19 @@
 from vino import contexts as ctx
 from vino import errors as err
+from vino.api.schema import obj, prim
+from vino.processors import processors as proc
 import pytest
+
+@pytest.fixture
+def diagnostic_proc():
+    class C:
+        def __init__(self, cb):
+            self.cb = cb 
+
+        def run(self, data, state):
+            #self.matches = state['matches']
+            self.cb(data, state) 
+    return C
 
 class TestContext:
 
@@ -162,4 +175,33 @@ class TestContext:
         c = context(*tags)
         nc = c.add(*tags)
         assert len(nc.runners)==len(c.runners) + len(tags)
+
+    def test_object_context(context, diagnostic_proc, logger):
+        proclist = [lambda x=x, *a,**kw: 'abc' for x in range(5)]
+        def run(data, state):
+            logger.info(data) 
+            logger.info(state) 
+
+        proc = diagnostic_proc(run) 
+        c = obj(
+            prim().apply_to('a', 'c'),
+            #prim().apply_to('b', 'a'),
+            #prim().apply_to('c', 'd'),
+            proc, 
+           #p[3]().apply_to('d'),
+           #p[4]().apply_to('e'),
+        )
+        # qualifier stack
+        qs = c.runners[2]['qualifiers']
+        assert qs._qualifiers['keys']==set(['a', 'c'])
+        c.validate({
+            'a': 'bec',
+            'b': 'bec',
+            'c': 'bec',
+            'd': 'bec',
+            'e': 'bec',
+            'f': 'bec',
+            'g': 'bec',
+        })
+
 
