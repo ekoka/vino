@@ -1,8 +1,12 @@
-# Vino: a data validation library
+# /!\ Warning: this library is still a work in progress. 
+### As a validation library I feel compelled to tell you to wait until it's been thoroughly reviewed for possible vulnerabilities, before trusting it with sensitive data.
+# /!\
+
+# Vino: a data validation toolkit
 
 ### In Vino Veritas (In wine lies the truth)
 
-**Vino** (pronounced vee-noh) is a Python data validation engine that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`. Vino is versatile, you can use it as a library to directly handle validations in your application, or it can become the engine that powers your own validation library that provides a layer of abstraction in the form of an alternative declarative syntax.
+**Vino** (pronounced vee-noh) is a Python data validation toolkit that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`. Vino is versatile, you can use it as a library to directly handle validations in your application, or it can become the engine that powers your own validation library that provides a layer of abstraction in the form of an alternative declarative syntax.
 
 ### The rational behind Vino: 
 
