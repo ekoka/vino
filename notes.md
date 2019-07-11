@@ -9,4 +9,6 @@
 
 - need to test for new namedtuple wrapper
 
+- replace allow\* processors and their associated processors with the equivalent rejet\* processors (e.g allownull => notrejectnull, notallownull => rejectnull)
+
 

@@ -34,13 +34,13 @@ Vino schemas are made up of 4 main components:
 - **Arrays**: represent JSON *arrays*. The data to validate may contain a collection of unnamed items that can be *Primitives*, *Arrays*, or *Objects*.
 - **Processors**: these are the constructs that hold the validation logic. They're tasked with either validating, transforming, ignoring, or sometimes removing data items submitted for validation.
     
-    # TODO: this excerpt should go under the paragraph discussing creation of Processors
+    #TODO this excerpt should go under the paragraph discussing creation of Processors
 
 Except for 3 special cases (discussed a bit later), Vino makes little distinction between processors, they all take the same elements as input, raise some `VinoValidation` error when they fail to perform their task, or return the valid data on success.
 
-One of the first things you'll notice with Vino is the syntax that doesn't use the popular approach of describing a schema with a dictionary or a class. Vino was designed to as a library that would be simple to use, yet flexible and powerful. Something to allow anyone to quickly write some simple functions to validate their data. In that spirit, there is a strong focus in keeping its syntax simple. It does not, however, prohibits for some wrappers to provide a supplemental syntax and then proxy to its validation routines.
+One of the first things you'll notice with Vino is the syntax that doesn't use the popular approach of describing a schema with a dictionary or a class. Vino was designed as a library that is conceptually simple to understand and use, yet flexible and powerful. Something to allow anyone to quickly write some simple functions to validate their data. In that spirit, there is a strong focus in keeping its syntax succinct. It does not, however, prohibits for some wrappers to supplement it with a domain-specific syntax which then proxies to its validation engine.
 
-The simplicity of Vino's syntax is deceptive in its flexibility and what it allows one to do. Here's a very explicit and detailed demonstration of how one could declare a user schema:
+The simplicity of Vino's syntax is deceptive in its flexibility and what it allows one to do. The follwing is a demonstration of how one could declare a user schema. Note that the example is purposely very explicit and detailed for demonstrative reasons. In reality, there are numerous opportunities for more compact declarations (e.g. through abstractions, reusable constructs, partials, etc). 
 
 
 ```python
@@ -49,8 +49,8 @@ from vino import prim, arr, obj
 # then import some validating processors
 from vino.processors.validating import (
     required, notrequired,
-    allownull, notallownull, 
-    allowempty, notallowempty, 
+    notrejectnull, rejectnull, 
+    notrejectempty, rejectempty, 
     string, checkuuid, 
     maxlength, minlength, 
     mustmatch
@@ -69,15 +69,15 @@ from .my_validation_utils import (
 
 user_schema = obj(                                                      # (0)
     prim(notrequired, checkuuid).apply_to('user_id'),                   # (1)
-    prim(required, string, strip allownull, notallowempty, 
+    prim(required, string, strip, notrejectnull, rejectempty, 
          minlength(10), maxlength(20)).apply_to('username')             # (2)
     check_unique_username,                                              # (3)
-    prim(notrequired, string, strip, notallownull, notallowempty,
+    prim(notrequired, string, strip, rejectnull, rejectempty,
          minlength(10), maxlength(500)).apply_to('password'),           # (4)
     address_schema.apply_to('address'),                                 # (5)
-    prim(required, string, strip, allownull, notallowempty, 
+    prim(required, string, strip, notrejectnull, rejectempty, 
         check_email).apply_to('email')                                  # (6)
-    prim(notrequired, string, strip, allownull, notallowempty,
+    prim(notrequired, string, strip, notrejectnull, rejectempty,
          camelcase).apply_to(
             'first_name', 'first-name', 'firstname', 
             'last_name', 'last-name', 'lastname')                       # (7)
@@ -95,7 +95,12 @@ except vino.ValidationError as e:
 
 1- declare a primitive type for the `user_id` field of the object. The primitive declaration opens a context specific to that value. Within that context a number of processing declaration are specified. The value is *not required*, which in Vino's parlance means that it absent from the data being validated. If present, it must pass the uuid check. 
 
-2- we declare a schema for the *user_id* field. primitive values with some sane defaults. That declaration will be reused later for data with similar base requirements. In this case we specify that a value is required and some data should be provided during validation otherwise it will fail; it must be of string type or can be set to None (Vino makes a clear distinction between a value that is *missing* (unspecified) and a value set to `None`), if set to a string it will be stripped of whitespaces on both ends, it must not be set to an empty value (Vino does not consider *missing* or `None` values to be empty. Empty values are empty strings, objects, or arrays)
+2- declare a primitive type for the `username`. This field is required, which means that it cannot be *missing* from the submitted data. It must either be `null` or a string. If a string, it will be stripped from whitespaces. If `null` it will not be rejected. If an empty string, it will not be allowed. A few things to note about this case:
+    - First, Vino makes a clear distinction between data that is *missing* (i.e. absent from the submitted lump), data that is `null`, and data that is *empty* (e.g. empty string, empty array, empty object). More on this in later sections. 
+    - Second, the type checkers provided directly by Vino (you can provide your own), such as the `string` type checker above, typically allow `null` as a valid value. That is, when checking if a value is a string, if it's `null` it will pass the check. The rationale here is that since you can combine the type check with another more explicit processor to handle `null`, such as `isnull` or `rejectnull`, it makes sense to allow it in the type checks, as it offers more granularity and more control.
+    - Finally, observe that the marshalling processor `strip` only modifies strings. If something is not a string, it does nothing and simply returns the value it received. Vino's own marshalling processors typically do not raise errors, they simply apply their modification to the data that they're designed to modify. Of course, you're free to handle things differently in your own processors, Vino does not enforce a particular philosophy.
+
+2- declare a schema for the *user_id* field. primitive values with some sane defaults. That declaration will be reused later for data with similar base requirements. In this case we specify that a value is required and some data should be provided during validation otherwise it will fail; it must be of string type or can be set to None (Vino makes a clear distinction between a value that is *missing* (unspecified) and a value set to `None`), if set to a string it will be stripped of whitespaces on both ends, it must not be set to an empty value (Vino does not consider *missing* or `None` values to be empty. Empty values are empty strings, objects, or arrays)
     
 1-  similar to the previous declaration, except that now the value is not required. So if the data is not provided, no error is raised. Validation simply ends on this specific schema and moves on to the next, if any (you could alternately declare a `default` or a fail-safe to run on a processor in the advent it should fail, which would then allow the validation to continue. More on this later.)
 2- declaration of an Object schema.
@@ -145,7 +150,7 @@ a validator that will accept only the string 'Vim':
 
 Some more processors explicitly added.
 
-    from vino.processors import allowblank, allownull, checktype, checkpattern
+    from vino.processors import allowblank, notrejectnull, checktype, checkpattern
 
 You can also create your own processors. A simple processor to strip white spaces
 (see `Processors Creation`).
@@ -159,7 +164,7 @@ You can also create your own processors. A simple processor to strip white space
         checktype('str'), 
         strstrip_processor,
         checkpattern(email_pattern),
-        allowblank(False), allownull(True)
+        allowblank(False), notrejectnull(True)
     )
     email_schema.validate('michael@sundry.ca') # True
 
@@ -178,8 +183,8 @@ also accept empty strings.
     arr_schema = vino.arr(
         items(batch(
             checktype('str', 'bool'),
-            allowempty(False),
-            allownull(True)
+            notrejectempty(False),
+            notrejectnull(True)
         ))
     )
     arr_schema.validate(['Jen', 'Paula', False, 123])  # fails: int type value
@@ -234,10 +239,10 @@ individual items.
     from vino.processors import minitems, maxitems
     arr_schema = vino.arr(
         items(vino.prim(checktype('str', 'bool')),           # validates first item
-              vino.prim(checktype('int'), allownull(True)),  # validates next item, 
-              vino.obj(allownull(False)),                    # item is an embedded object
+              vino.prim(checktype('int'), notrejectnull(True)),  # validates next item, 
+              vino.obj(notrejectnull(False)),                    # item is an embedded object
               vino.arr(...),                                 # item is an array
-              vino.prim(allownull(False)),  # and so forth...
+              vino.prim(notrejectnull(False)),  # and so forth...
         ),
         minitems(2),
         maxitems(6),
@@ -289,10 +294,10 @@ named elements:
     >>> from my.own.validation.funcs import email_unique
     >>> user_schema = vino.obj(
     ...     vino.p('firstname', checktype('str'), 
-    ...         allowempty(False), allownull(True)), 
+    ...         notrejectempty(False), notrejectnull(True)), 
     ...     vino.p('user_id', checktype('int')),
     ...     vino.p('email', required(), checktype('str'), email_unique,
-    ...             allowempty(False), allownull(False)), 
+    ...             notrejectempty(False), notrejectnull(False)), 
     ...     # you can intersperse processors among properties as well.
     ...     remove_property('user_id'),
     ...     vino.o('role', ...),
@@ -332,18 +337,18 @@ the scope of what Vino can do. So for this app, email verification will be
 limited to a simple typo check.
 
     import vino
-    from vino.processors import allowblank, allownull, checktype, required, checkformat
+    from vino.processors import allowblank, notrejectnull, checktype, required, checkformat
 
     user_schema = vino.obj('user',
-        vino.p('first_name', checktype('string'), allowblank(False), allownull()),
-        vino.p('last_name', checktype('string'), allowblank(False), allownull()),
+        vino.p('first_name', checktype('string'), allowblank(False), notrejectnull()),
+        vino.p('last_name', checktype('string'), allowblank(False), notrejectnull()),
         # for the unique email check, we specify a user-defined function that
         # will do some quick database querying.
         vino.p('email', required(), checktype('string'), 'strip', 
                 checkformat('simple_email'), unique_email, allowblank(False), 
-                allownull(False)),
+                notrejectnull(False)),
         vino.p('password', required(), checktype('string'), allowblank(False),
-                allownull(False)),
+                notrejectnull(False)),
     )
 
     # user-defined processor to ensure that the address doesn't yet exist in the database
@@ -358,19 +363,19 @@ limited to a simple typo check.
 
 - Special validation processes: handling missing fields, blank values, and null.
 required(), which is added as the first processors when absent from the list.
-allowblank() and allownull(), which are both added at the end of the list when
+allowblank() and notrejectnull(), which are both added at the end of the list when
 absent from it.
 
 checktype():
 As the name implies, this processor checks data items against the types listed
 during registration in the schema. Note that this processor doesn't care for null
-values (use the allownull() processor for that), except in one specific case, if
+values (use the notrejectnull() processor for that), except in one specific case, if
 the only type it accepts is `null`, in which case all other types cause `checktype()` 
 to fail.
 
-    >>> schema = prim(name('city'), checktype('string', 'int'), allownull())
+    >>> schema = prim(name('city'), checktype('string', 'int'), notrejectnull())
     >>> prim.validate(None) # will pass
-    >>> schema = prim(name('city'), checktype('string', 'int'), allownull(False))
+    >>> schema = prim(name('city'), checktype('string', 'int'), notrejectnull(False))
     >>> schema.validate(None) # will fail
 
 Boolean processors:
@@ -388,20 +393,20 @@ Boolean `not` can be applied to Boolean processors. That is, the following decla
 
         vino.p('nickname', required(False), checktype('string'), 'strip', 
                 checkformat('simple_email'), unique_email, allowblank(False), 
-                allownull(False))
+                notrejectnull(False))
 
 could be rewritten as
 
         vino.p('nickname', not required(), checktype('string'), 'strip', 
                 checkformat('simple_email'), unique_email, not allowblank(), 
-                not allownull())
+                not notrejectnull())
 
 Boolean processors can also just be set by listing their type without
 instantiating them. So to keep with the above example, it becomes
 
         vino.p('nickname', not required, checktype('string'), 'strip', 
                 checkformat('simple_email'), unique_email, not allowblank, 
-                not allownull)
+                not notrejectnull)
     
 
 - Smart vs Explicit mode
@@ -419,10 +424,10 @@ what should happen with these validation attempts?
     ?
 
 In Smart mode a `not required` processor will be placed as the first processor in
-the chain, `allownull` and `not allowblank` will be queued up after other processors.
+the chain, `notrejectnull` and `not allowblank` will be queued up after other processors.
 
 You can decide the default value of implicit processors that are added by Vino by using the `vino.implicit_defaults()` context manager as such.
-    >>> with vino.implicit_defaults(allownull=False, allowblank=False, required=False):
+    >>> with vino.implicit_defaults(notrejectnull=False, allowblank=False, required=False):
     ...     # the following will have its 3 *implicit* processors set to False. 
     ...     first_name_schema = prim(name('first_name')) 
 
@@ -440,9 +445,9 @@ explicitly declared boolean processors.
 
 Let's drive the point home with some code:
 
-    >>> with implicit_defaults(allownull=False, allowblank=False, required=False):
+    >>> with implicit_defaults(notrejectnull=False, allowblank=False, required=False):
     ...     # the next 3 lines will set these boolean processors to True
-    ...     null = allownull()
+    ...     null = notrejectnull()
     ...     blank = allowblank()
     ...     mandatory = required()
     ...     null is True and blank is True and mandatory is True
@@ -519,15 +524,15 @@ As you can see by the example, the password field will be missing during validat
 
 Currently strings, arrays and objects can have empty values ("", [] and {}
 respectively). You can prevent or allow an item to hold such a value with
-`allowempty`.
+`notrejectempty`.
 
-For practical reasons I decided that the implicitly `allowempty` processor that
+For practical reasons I decided that the implicitly `notrejectempty` processor that
 Vino adds when there are no explicit declaration for it would be set to
 `False`, for all three types. Although it generally makes sense to set it to
 `False` for strings and `True` for arrays and objects, I didn't want to burden the
 documentation with too many special behaviours. It's just simpler to remember
-that if you don't specify an `allowempty` processor, Vino will add `not
-allowempty` for you as the one before last element of your chain of validation
+that if you don't specify an `notrejectempty` processor, Vino will add `not
+notrejectempty` for you as the one before last element of your chain of validation
 for all three types.
 
     user_schema = obj(
@@ -535,8 +540,8 @@ for all three types.
         prim('email', 
              # required, (implicit)
              checktype('str'), 
-             # not allowempty, (implicit)
-             allownull
+             # not notrejectempty, (implicit)
+             notrejectnull
         ),
         [...]
     )
@@ -557,23 +562,23 @@ for all three types.
 - handling null values
 Only `None` is considered a null value from within Python. Just like with
 empty values, you can allow or prevent a field to be set to null with
-`allownull`. When not explicitly specified it will be implicitly added as
-`allownull(True)`.
+`notrejectnull`. When not explicitly specified it will be implicitly added as
+`notrejectnull(True)`.
     
     user_schema = obj(
         [...]
         prim('email', 
              # required,  (implicit)
              checktype('str'), 
-             # not allowempty, (implicit)
-             # allownull (implicit)
+             # not notrejectempty, (implicit)
+             # notrejectnull (implicit)
         ),
         [...]
     )
 
 
 
-How Vino implicitly adds `required`, `allownull`, and `allowempty` in the validation chain
+How Vino implicitly adds `required`, `notrejectnull`, and `notrejectempty` in the validation chain
 ------------------------------------------------------------------------------------------
 - If the `required` processor is missing from the validation chain in the schema
   declaration of a primitive or object's property, Vino will implicitly add it
@@ -596,15 +601,15 @@ How Vino implicitly adds `required`, `allownull`, and `allowempty` in the valida
                 primitive_schema.validate(value)
             
 
-- If the processor `allowempty` is missing from the validation processor chain in
+- If the processor `notrejectempty` is missing from the validation processor chain in
   the schema declaration of a primitive, object's property, or specific array
   item, that is declared to be a string, an array, or object Vino will
-  implicitly add `not allowempty` as the second to last processor of the
+  implicitly add `notrejectempty` as the second to last processor of the
   validation chain for that item. 
 
-- If the processor `allownull` is missing from the validation processor chain in the
+- If the processor `notrejectnull` is missing from the validation processor chain in the
   schema declaration of a primitive, object's property, or specific array
-  item, Vino will implicitly add `allownull` as the last processor of the
+  item, Vino will implicitly add `notrejectnull` as the last processor of the
   validation chain for that item.
 
 To prevent Vino from implicitly adding either of these 3 processors to the
