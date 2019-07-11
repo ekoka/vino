@@ -1,7 +1,6 @@
-""" 
-Vino (pronounced vee-noh) is a Python data validation library that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data modeled using the main JSON data types, namely Number, String, Boolean, Array, Object, and null, once they've been converted to their Python counterparts: int or float, string, boolean, list, dict, and None.
+**Vino** (pronounced vee-noh) is a Python data validation library that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`.
 
-The rational behind Vino: 
+### The rational behind Vino: 
 
 Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. For some reason however I've still found it tedious to do this crucial task in my applications with existing libraries. I want them to take my data and just return what I need to shoot in the database. I don't want to deal with some additional steps in between.
 
@@ -9,14 +8,15 @@ Python is blessed with a plethora of high quality libraries to solve all kinds o
     valid_data.pop('confirm_password', None) # no no no
     user.query.insert(valid_data)
 
-### "In Vino Veritas"
+
+#### In Vino Veritas (In wine lies the truth)
 
 
 Let's show some code first and then discuss it later.
     
     #TODO quick example should go here
 
-To provide a widely simplistic overview of Vino, the typical schema is made up of 2 types of constructs: context and instructions, arranged together to guide validation.
+To give an simple and abstract overview of Vino, the typical schema is made up of 2 types of constructs: contexts and instructions, arranged together to guide validation in a sequence.
 
     schema = ctx(
         ctx(instruction, instruction, instruction),
@@ -28,12 +28,12 @@ To provide a widely simplistic overview of Vino, the typical schema is made up o
         instruction,
     )
 
-In the schema above the Context represents the data that the schema expects to work with and the instructions are operations that will be applied to them.
+In the schema above the *contexts* represent the data that the schema expects to work with and the *instructions* are operations that will be applied to the data.
 
 Vino schemas are made up of 4 main components:
-    - Values or Primitives: a representation of the basic JSON data types including strings, booleans, numbers and null. The data to validate may be a single value such as true, 3.14, "john", null.
-    - Objects: a representation of JSON objects. The data to validate can hold a set of named properties that refer to values of any type (Primitives, Arrays, or other Objects).
-    - Arrays: represent JSON arrays. The data to validate may contain a collection of unnamed items that can be Primitives, Arrays, or Objects.
+    - *Values* or *Primitives*: a representation of the basic JSON data types including *strings*, *booleans*, *numbers* and *null*. The data to validate may be a single value such as `true`, `3.14`, `"john"`, `null`.
+    - *Objects*: a representation of JSON *objects*. The data to validate can hold a set of named properties that refer to values of any type (*Primitives*, *Arrays*, or other *Objects*).
+    - *Arrays*: represent JSON *arrays*. The data to validate may contain a collection of unnamed items that can be *Primitives*, *Arrays*, or *Objects*.
     - Processors: these are the constructs that hold the validation logic. They're tasked with either validating, transforming, ignoring, or sometimes removing data items submitted for validation.
     
 # TODO: this excerpt should go under the paragraph discussing creation of Processors
