@@ -91,7 +91,7 @@ except vino.ValidationError as e:
     raise HTTPError(400, e.msg)                                         # (10)
 ```
 
-0- open the schema declaration with an object data type. This is typical because, whether for practical reason or out of necessity, data is often transported as part of a wrapping construct which is usually a JSON object.
+0. open the schema declaration with an object data type. This is typical because, whether for practical reason or out of necessity, data is often transported as part of a wrapping construct which is usually a JSON object.
 
 1. declare a primitive type for the `user_id` field of the object. The primitive declaration opens a context specific to that value. Within that context a number of processing declaration are specified. The value is *not required*, which in Vino's parlance means that it absent from the data being validated. If present, it must pass the uuid check. 
 
