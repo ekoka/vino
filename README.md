@@ -1,22 +1,16 @@
-**Vino** (pronounced vee-noh) is a Python data validation library that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`.
+# Vino: a data validation library
+
+### In Vino Veritas (In wine lies the truth)
+
+**Vino** (pronounced vee-noh) is a Python data validation engine that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`. Vino is versatile, you can use it as a library to directly handle validations in your application, or it can become the engine that powers your own validation library that provides a layer of abstraction in the form of an alternative declarative syntax.
 
 ### The rational behind Vino: 
 
-Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. For some reason however I've still found it tedious to do this crucial task in my applications with existing libraries. I want them to take my data and just return what I need to shoot in the database. I don't want to deal with some additional steps in between.
+Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. For one reason or another, however, I've never been completely satisfied with what existing libraries allow me to do in my applications. I've sometimes wanted a level of control over the validation steps that I've never found. Then one day I sat and I started creating Vino. 
 
-    valid_data = user_schema.validate(user_form.data)
-    valid_data.pop('confirm_password', None) # no no no
-    user.query.insert(valid_data)
-
-
-#### In Vino Veritas (In wine lies the truth)
-
-
-Let's show some code first and then discuss it later.
-    
     #TODO quick example should go here
 
-To give an simple and abstract overview of Vino, the typical schema is made up of 2 types of constructs: contexts and instructions, arranged together to guide validation in a sequence.
+To give a simplified and very abstract overview of the concepts behind a Vino schema, it will typically be made up of 2 types of constructs: contexts and instructions, arranged together to guide validation in a precise sequence.
 
     schema = ctx(
         ctx(instruction, instruction, instruction),
@@ -28,66 +22,80 @@ To give an simple and abstract overview of Vino, the typical schema is made up o
         instruction,
     )
 
-In the schema above the *contexts* represent the data that the schema expects to work with and the *instructions* are operations that will be applied to the data.
+In the schema above the *contexts* represent the data that the schema expects to work with and the containing *instructions* are operations that will be applied to that data.
 
 Vino schemas are made up of 4 main components:
-    - *Values* or *Primitives*: a representation of the basic JSON data types including *strings*, *booleans*, *numbers* and *null*. The data to validate may be a single value such as `true`, `3.14`, `"john"`, `null`.
-    - *Objects*: a representation of JSON *objects*. The data to validate can hold a set of named properties that refer to values of any type (*Primitives*, *Arrays*, or other *Objects*).
-    - *Arrays*: represent JSON *arrays*. The data to validate may contain a collection of unnamed items that can be *Primitives*, *Arrays*, or *Objects*.
-    - Processors: these are the constructs that hold the validation logic. They're tasked with either validating, transforming, ignoring, or sometimes removing data items submitted for validation.
+- **Values** or **Primitives**: a representation of the basic JSON data types including *strings*, *booleans*, *numbers* and *null*. The data to validate may be a single value such as `true`, `3.14`, `"john"`, `null`.
+- **Objects**: a representation of JSON *objects*. The data to validate can hold a set of named properties that refer to values of any type (*Primitives*, *Arrays*, or other *Objects*).
+- **Arrays**: represent JSON *arrays*. The data to validate may contain a collection of unnamed items that can be *Primitives*, *Arrays*, or *Objects*.
+- **Processors**: these are the constructs that hold the validation logic. They're tasked with either validating, transforming, ignoring, or sometimes removing data items submitted for validation.
     
-# TODO: this excerpt should go under the paragraph discussing creation of Processors
+    # TODO: this excerpt should go under the paragraph discussing creation of Processors
 
-Except for 3 special cases (discussed a bit later), Vino makes little distinction between processors, they all take the same elements as input, raise some Validation error when they fail to perform their task, or return the valid data on success.
+Except for 3 special cases (discussed a bit later), Vino makes little distinction between processors, they all take the same elements as input, raise some `VinoValidation` error when they fail to perform their task, or return the valid data on success.
 
-One of the first things you'll notice with Vino is the syntax that doesn't use the popular approach of describing a schema with a dictionary or a class. Vino was designed to scratch an itch. It originally started as a library that would be just simple to use, yet flexible and powerful. Something that would just allow to quickly write some simple function to validate some data and just whip it in there.
+One of the first things you'll notice with Vino is the syntax that doesn't use the popular approach of describing a schema with a dictionary or a class. Vino was designed to as a library that would be simple to use, yet flexible and powerful. Something to allow anyone to quickly write some simple functions to validate their data. In that spirit, there is a strong focus in keeping its syntax simple. It does not, however, prohibits for some wrappers to provide a supplemental syntax and then proxy to its validation routines.
 
-The simplicity of Vino's syntax is deceptive in its flexibility and what it allows one to do. Here's a demonstration of different ways one could declare a user schema:
+The simplicity of Vino's syntax is deceptive in its flexibility and what it allows one to do. Here's a very explicit and detailed demonstration of how one could declare a user schema:
 
 
-    ```python
-    from vino import prim, arr, obj, field
-    from vino.processors.validating import (
-        required, allownull, 
-        allowempty, string,
-        checkuuid, maxlength,
-        minlength, mustmatch)
-    from vino.processors.marshalling import (
-        strip, camelcase, stringify
-    )
-    from .models.users import check_unique, check_email
-    from .validations.addresses import address_schema
+```python
+# first import the basic data constructs: primitives, arrays, and objects
+from vino import prim, arr, obj
+# then import some validating processors
+from vino.processors.validating import (
+    required, notrequired,
+    allownull, notallownull, 
+    allowempty, notallowempty, 
+    string, checkuuid, 
+    maxlength, minlength, 
+    mustmatch
+)
+# then import some marshalling processors
+from vino.processors.marshalling import (
+    strip, camelcase, stringify
+)
 
-    req_str = prim(required, string, strip, allownull, ~allowempty)         # (0)
-    nonreq_str = prim(~required, string, strip, allownull, ~allowempty)     # (1)
+# some custom processors
+from .my_validation_utils import (
+    address_schema, 
+    check_unique_username, 
+    check_email
+)
 
-    user_schema = obj(                                                      # (2)
-        field(user_id=prim(~required, checkuuid)),                          # (3)
-        field(username=req_str(
-            minlength(10), maxlength(20))),                                 # (4)
-        check_unique_username,                                              # (5)
-        field(password=nonreq_str(
-            minlength(10), maxlength(500), ~allownull)),                    # (6)
-        field(confirm_password=nonreq_str(mustmatch('password'))),          # (7)
-        field(address=address_schema),                                      # (8)
-        field(email=req_str(check_email)),                                  # (9)
-        nonreq_str(camelcase).apply_to(
+user_schema = obj(                                                      # (0)
+    prim(notrequired, checkuuid).apply_to('user_id'),                   # (1)
+    prim(required, string, strip allownull, notallowempty, 
+         minlength(10), maxlength(20)).apply_to('username')             # (2)
+    check_unique_username,                                              # (3)
+    prim(notrequired, string, strip, notallownull, notallowempty,
+         minlength(10), maxlength(500)).apply_to('password'),           # (4)
+    address_schema.apply_to('address'),                                 # (5)
+    prim(required, string, strip, allownull, notallowempty, 
+        check_email).apply_to('email')                                  # (6)
+    prim(notrequired, string, strip, allownull, notallowempty,
+         camelcase).apply_to(
             'first_name', 'first-name', 'firstname', 
-            'last_name', 'last-name', 'lastname'),                          # (10)
-    )
+            'last_name', 'last-name', 'lastname')                       # (7)
 
 
-    try:
-        sane_data = user_schema.validate(user_data) # (11)
-        db.User.get(user_id=sane_data.get('user_id')) 
-    except vino.ValidationError as e:
-        raise HTTPError(400, e.msg) # (12)
-    ```
 
-    # (0) we declare a schema for primitive values with some sane defaults. That declaration will be reused later for data with similar base requirements. In this case we specify that a value is required and some data should be provided during validation otherwise it will fail; it must be of string type or can be set to None (Vino makes a clear distinction between a value that is *missing* (unspecified) and a value set to `None`), if set to a string it will be stripped of whitespaces on both ends, it must not be set to an empty value (Vino does not consider *missing* or `None` values to be empty. Empty values are empty strings, objects, or arrays)
-    # (1) similar to the previous declaration, except that now the value is not required. So if the data is not provided, no error is raised. Validation simply ends on this specific schema and moves on to the next, if any (you could alternately declare a `default` or a fail-safe to run on a processor in the advent it should fail, which would then allow the validation to continue. More on this later.)
-    # (2) declaration of an Object schema.
-    # (3) we declare a field named `user_id` on the object and we assign a primitive data type to it. Similarly to (1) the item is not required, but must pass a `uuid` check if provided. Thus the data should either be provided as uuid or be completely absent from the data set.
+try:
+    sane_data = user_schema.validate(user_data)                         # (8)
+    db.User.get(user_id=sane_data.get('user_id'))                       # (9)
+except vino.ValidationError as e:
+    raise HTTPError(400, e.msg)                                         # (10)
+```
+
+0- open the schema declaration with an object data type. This is typical because, whether for practical reason or out of necessity, data is often transported as part of a wrapping construct which is usually a JSON object.
+
+1- declare a primitive type for the `user_id` field of the object. The primitive declaration opens a context specific to that value. Within that context a number of processing declaration are specified. The value is *not required*, which in Vino's parlance means that it absent from the data being validated. If present, it must pass the uuid check. 
+
+2- we declare a schema for the *user_id* field. primitive values with some sane defaults. That declaration will be reused later for data with similar base requirements. In this case we specify that a value is required and some data should be provided during validation otherwise it will fail; it must be of string type or can be set to None (Vino makes a clear distinction between a value that is *missing* (unspecified) and a value set to `None`), if set to a string it will be stripped of whitespaces on both ends, it must not be set to an empty value (Vino does not consider *missing* or `None` values to be empty. Empty values are empty strings, objects, or arrays)
+    
+1-  similar to the previous declaration, except that now the value is not required. So if the data is not provided, no error is raised. Validation simply ends on this specific schema and moves on to the next, if any (you could alternately declare a `default` or a fail-safe to run on a processor in the advent it should fail, which would then allow the validation to continue. More on this later.)
+2- declaration of an Object schema.
+3- we declare a field named `user_id` on the object and we assign a primitive data type to it. Similarly to (1) the item is not required, but must pass a `uuid` check if provided. Thus the data should either be provided as uuid or be completely absent from the data set.
     # (4) field "username" declared using our previous base schema that we extend by specifying `minlength` and `maxlength` processors.
     # (5) 
     # (6)
