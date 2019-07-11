@@ -8,9 +8,9 @@
 
 **Vino** (pronounced vee-noh) is a Python data validation toolkit that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`. Vino is versatile, you can use it as a library to directly handle validations in your application, or it can become the engine that powers your own validation library that provides a layer of abstraction in the form of an alternative declarative syntax.
 
-### The rational behind Vino: 
+### The rationale behind Vino: 
 
-Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. For one reason or another, however, I've never been completely satisfied with what existing libraries allow me to do in my applications. I've sometimes wanted a level of control over the validation steps that I've never found. Then one day I sat and I started creating Vino. 
+Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. For one reason or another, however, I've never been completely satisfied with what existing libraries allow me to do in my applications. I've sometimes wanted a level of control over the validation steps that I've never found. Then one day I sat and I started building Vino. 
 
     #TODO quick example should go here
 
@@ -44,7 +44,7 @@ The simplicity of Vino's syntax is deceptive in its flexibility and what it allo
 
 
 ```python
-# first import the basic data constructs: primitives, arrays, and objects
+# first import the 3 basic context constructs: primitive, array, and object
 from vino import prim, arr, obj
 # then import some validating processors
 from vino.processors.validating import (
@@ -93,9 +93,9 @@ except vino.ValidationError as e:
 
 0- open the schema declaration with an object data type. This is typical because, whether for practical reason or out of necessity, data is often transported as part of a wrapping construct which is usually a JSON object.
 
-1- declare a primitive type for the `user_id` field of the object. The primitive declaration opens a context specific to that value. Within that context a number of processing declaration are specified. The value is *not required*, which in Vino's parlance means that it absent from the data being validated. If present, it must pass the uuid check. 
+1. declare a primitive type for the `user_id` field of the object. The primitive declaration opens a context specific to that value. Within that context a number of processing declaration are specified. The value is *not required*, which in Vino's parlance means that it absent from the data being validated. If present, it must pass the uuid check. 
 
-2- declare a primitive type for the `username`. This field is required, which means that it cannot be *missing* from the submitted data. It must either be `null` or a string. If a string, it will be stripped from whitespaces. If `null` it will not be rejected. If an empty string, it will not be allowed. A few things to note about this case:
+2. declare a primitive type for the `username`. This field is required, which means that it cannot be *missing* from the submitted data. It must either be `null` or a string. If a string, it will be stripped from whitespaces. If `null` it will not be rejected. If an empty string, it will not be allowed. A few things to note about this case:
     - First, Vino makes a clear distinction between data that is *missing* (i.e. absent from the submitted lump), data that is `null`, and data that is *empty* (e.g. empty string, empty array, empty object). More on this in later sections. 
     - Second, the type checkers provided directly by Vino (you can provide your own), such as the `string` type checker above, typically allow `null` as a valid value. That is, when checking if a value is a string, if it's `null` it will pass the check. The rationale here is that since you can combine the type check with another more explicit processor to handle `null`, such as `isnull` or `rejectnull`, it makes sense to allow it in the type checks, as it offers more granularity and more control.
     - Finally, observe that the marshalling processor `strip` only modifies strings. If something is not a string, it does nothing and simply returns the value it received. Vino's own marshalling processors typically do not raise errors, they simply apply their modification to the data that they're designed to modify. Of course, you're free to handle things differently in your own processors, Vino does not enforce a particular philosophy.
