@@ -1,5 +1,8 @@
-# /!\ Warning: this library is still a work in progress. 
-### As a validation library I feel compelled to tell you to wait until it's been thoroughly reviewed for possible vulnerabilities, before trusting it with sensitive data.
+# /!\ A warning for the accidental wanderer who was looking for a Python validation library
+#### This is a work in progress. 
+#### Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and cranes ;) everyone else will just have to wait a little.
+
+#### Feel free to download the code to play in non-critical settings.
 # /!\
 
 # Vino: a data validation toolkit
@@ -63,55 +66,48 @@ from vino.processors.marshalling import (
 # some custom processors
 from .my_validation_utils import (
     address_schema, 
-    check_unique_username, 
     check_email
 )
 
 user_schema = obj(                                                      # (0)
-    prim(notrequired, checkuuid).apply_to('user_id'),                   # (1)
     prim(required, string, strip, notrejectnull, rejectempty, 
-         minlength(10), maxlength(20)).apply_to('username')             # (2)
-    check_unique_username,                                              # (3)
+        check_email).apply_to('email')                                  # (1)
     prim(notrequired, string, strip, rejectnull, rejectempty,
-         minlength(10), maxlength(500)).apply_to('password'),           # (4)
-    address_schema.apply_to('address'),                                 # (5)
-    prim(required, string, strip, notrejectnull, rejectempty, 
-        check_email).apply_to('email')                                  # (6)
+         minlength(10), maxlength(500)).apply_to('password'),           # (2)
     prim(notrequired, string, strip, notrejectnull, rejectempty,
-         camelcase).apply_to(
-            'first_name', 'first-name', 'firstname', 
-            'last_name', 'last-name', 'lastname')                       # (7)
+         camelcase).apply_to('first_name', 'last_name')                 # (3)
 
 
 
 try:
-    sane_data = user_schema.validate(user_data)                         # (8)
-    db.User.get(user_id=sane_data.get('user_id'))                       # (9)
+    sane_data = user_schema.validate(user_data)                         # (4)
+    db.User.get(user_id=sane_data.get('user_id'))                       # (5)
 except vino.ValidationError as e:
-    raise HTTPError(400, e.msg)                                         # (10)
+    raise HTTPError(400, e.msg)                                         # (6)
 ```
 
-0. open the schema declaration with an object data type. This is typical because, whether for practical reason or out of necessity, data is often transported as part of a wrapping construct which is usually a JSON object.
+0. open an object type context declaration as a global container for our validation. This is typical since, whether for practical reasons or out of necessity, data is often transported as part of a wrapping construct which is usually a JSON object.
 
-1. declare a primitive type for the `user_id` field of the object. The primitive declaration opens a context specific to that value. Within that context a number of processing declaration are specified. The value is *not required*, which in Vino's parlance means that it absent from the data being validated. If present, it must pass the uuid check. 
+1. Next, within our object type context, declare a primitive type context for the `email` property of the object. This declaration opens a context specific to the value being validated. Within that context a number of validation processors are declared. The first is a `required` processor which makes the field mandatory, meaning that it cannot be *missing* from the submitted data. The following `string` processor accepts either `null` or `string` types. If the value is indeed a string, the `strip` processor removes padded whitespaces, else it simply returns the value as it received it. The `notrejectnull` processor explicitly states that `null` values are allowed, the reason for adding this processor will be explained later. The `rejectempty` processor will fail for any empty string. Finally, a user-defined processor supposedly validates the format of the email. A few things to note here:
+    - First, Vino makes a clear distinction between a property that is *missing* (i.e. is absent from the submitted lump of data), a property that is `null`, and a property that is *empty* (only empty strings, empty arrays, and empty objects are considered *empty*). We'll talk more about this in a later section.
+    - Second, the type checkers provided directly by Vino (you can provide your own), such as the `string` type checker above, typically allow `null` as a valid value. That is, when checking if a value is a string type, if it's `null` it will pass the check. The rationale here is that since you can combine type checks with another more explicit processor to handle `null`, such as the `rejectnull` processor, it makes sense to let type checks ignore them, as it offers more granularity and more control.
+    - Finally, observe that most Vino native processors are grouped into either *validating* or *marshalling*. Vino's validating processors typically do not modify values, they either raise an error or return the value that they received. Whereas, Vino's marshalling processors typically do not raise errors, but simply apply their modifications to the data that they're designed to modify. For example, the `strip` marshalling processor only removes whitespace padding from strings. If something is not a string, it does nothing and simply returns the value it received. Of course, you're free to handle things differently in your own processors. Vino's processors all have the same signature and mechanism and Vino does not enforce a particular philosophy.
 
-2. declare a primitive type for the `username`. This field is required, which means that it cannot be *missing* from the submitted data. It must either be `null` or a string. If a string, it will be stripped from whitespaces. If `null` it will not be rejected. If an empty string, it will not be allowed. A few things to note about this case:
-    - First, Vino makes a clear distinction between data that is *missing* (i.e. absent from the submitted lump), data that is `null`, and data that is *empty* (e.g. empty string, empty array, empty object). More on this in later sections. 
-    - Second, the type checkers provided directly by Vino (you can provide your own), such as the `string` type checker above, typically allow `null` as a valid value. That is, when checking if a value is a string, if it's `null` it will pass the check. The rationale here is that since you can combine the type check with another more explicit processor to handle `null`, such as `isnull` or `rejectnull`, it makes sense to allow it in the type checks, as it offers more granularity and more control.
-    - Finally, observe that the marshalling processor `strip` only modifies strings. If something is not a string, it does nothing and simply returns the value it received. Vino's own marshalling processors typically do not raise errors, they simply apply their modification to the data that they're designed to modify. Of course, you're free to handle things differently in your own processors, Vino does not enforce a particular philosophy.
+2. The `password` property is validated in a primitive type context. Its first processor explicitly flags it as a property that *is not required*, which means that it's an optional property and if absent from the validated data, its entire validation chain will simply be skipped. The subsequent processors are self explanatory.
 
-2- declare a schema for the *user_id* field. primitive values with some sane defaults. That declaration will be reused later for data with similar base requirements. In this case we specify that a value is required and some data should be provided during validation otherwise it will fail; it must be of string type or can be set to None (Vino makes a clear distinction between a value that is *missing* (unspecified) and a value set to `None`), if set to a string it will be stripped of whitespaces on both ends, it must not be set to an empty value (Vino does not consider *missing* or `None` values to be empty. Empty values are empty strings, objects, or arrays)
-    
-1-  similar to the previous declaration, except that now the value is not required. So if the data is not provided, no error is raised. Validation simply ends on this specific schema and moves on to the next, if any (you could alternately declare a `default` or a fail-safe to run on a processor in the advent it should fail, which would then allow the validation to continue. More on this later.)
-2- declaration of an Object schema.
-3- we declare a field named `user_id` on the object and we assign a primitive data type to it. Similarly to (1) the item is not required, but must pass a `uuid` check if provided. Thus the data should either be provided as uuid or be completely absent from the data set.
-    # (4) field "username" declared using our previous base schema that we extend by specifying `minlength` and `maxlength` processors.
-    # (5) 
-    # (6)
-    # (7)
-    # (8)
-    # (9)
-    # (10)
+try:
+    sane_data = user_schema.validate(user_data)                         # (4)
+    db.User.get(user_id=sane_data.get('user_id'))                       # (5)
+except vino.ValidationError as e:
+    raise HTTPError(400, e.msg)                                         # (6)
+
+3. The same context is applied to the `first_name` and `last_name` properties. Its processors follow similar patterns to the above.
+
+4. The schema is then applied to some untrusted data and if everything goes well, a validated and marshalled version is returned.   
+
+5. The sane data is then persisted.
+
+6. In case something wrong happened, an error is raised. In this case the message is reused as the description of the HTTP Error response. 
 
 It should be noted that schema objects are not immutable, but to ensure their safe reusability their API makes the mutability explicit, not accidental. So when adding new processors to a Schema, you're in fact returning another schema, not extending the current one.
 
