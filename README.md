@@ -1,9 +1,7 @@
-# /!\ A warning for the accidental wanderer who was looking for a Python validation library
-#### This is a work in progress. 
-#### Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and cranes ;) everyone else will just have to wait a little.
+###  \*\*\* This is a work in progress \*\*\*
+#### Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and cranes ;)
 
 #### Feel free to download the code to play in non-critical settings.
-# /!\
 
 # Vino: a data validation toolkit
 
