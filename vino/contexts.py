@@ -3,12 +3,31 @@ from .processors.runners import RunnerStack
 from . import errors 
 
 class Context:
-    ''' The Context represent the primary scope of influence of a processor.
-    Basic JSON elements (number, string, boolean, null) have a single context,
-    within which the processors declared can influence the data. Array and
-    Object elements each can have one or more scopes. The primary scope is for
-    the constructs themselves, while their items or properties are handled in
-    sub-scopes.
+    ''' The `Context` represent the scope of influence of the processors in a
+    validation declaration. `Contexts` for primitive JSON elements (number,
+    string, boolean, null) have a simple scope, within which the declared
+    processors can influence the declared element.
+
+        >>> from vino.contexts import Context 
+        >>> from vino import isnot_int, allowempty, allownull, required
+        >>> name = Context(
+        ...    isnot_int, 
+        ...    allownull,
+        ...    allowempty,
+        ...    ~required,
+        ... )
+        >>> name.validate('Michael')
+        Michael
+    
+    By contrast, Array and Object schemas would require multiple scopes. The
+    main scope would handle the container element itself (the object or the
+    array), while their contained items or properties would be handled in their
+    own sub-Contexts.
+
+        user = Context(
+            
+            
+        )
     '''
 
     _default_runner_stack_cls = RunnerStack
@@ -88,7 +107,7 @@ class Context:
 
     def init_matches(self): 
         # TODO: This seems a bit circuitous. Should the Context really be the
-        # one to initiate matches? I should think about this some more.
+        # one to initiate matches?
         if self.qualifier_stack_cls:
             return self.qualifier_stack_cls.init_matches()
 

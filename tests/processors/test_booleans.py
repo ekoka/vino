@@ -21,7 +21,7 @@ def Inverses():
 
 @pytest.fixture
 def Mandatory():
-    class rv(prc.BooleanProcessor, vld.MandatoryClause):
+    class rv(prc.BooleanProcessor, prc.MandatoryClause):
         __clause_name__ = 'random clause'
     return rv
 
@@ -105,27 +105,27 @@ class TestMandatoryProcessors:
         assert vld.required is vld.Required
         assert vld.optional is vld.Optional
         assert vld.allownull is vld.AllowNull
-        assert vld.rejectnull is vld.RejectNull
+        assert vld.not_allownull is vld.NotAllowNull
         assert vld.allowempty is vld.AllowEmpty
-        assert vld.rejectempty is vld.RejectEmpty
+        assert vld.not_allowempty is vld.NotAllowEmpty
 
     def test_inverses(s):
         assert ~vld.required is vld.optional
         assert ~vld.optional is vld.required
-        assert ~vld.allownull is vld.rejectnull
-        assert ~vld.rejectnull is vld.allownull
-        assert ~vld.allowempty is vld.rejectempty
-        assert ~vld.rejectempty is vld.allowempty
+        assert ~vld.allownull is vld.not_allownull
+        assert ~vld.not_allownull is vld.allownull
+        assert ~vld.allowempty is vld.not_allowempty
+        assert ~vld.not_allowempty is vld.allowempty
 
 class TestRequiredProcessor: 
 
-    def test_required_rejects_absent_value(s):
+    def test_required_not_allows_absent_value(s):
         v = vld.required()
         with pytest.raises(err.ValidationError) as e:
             v.run()
         assert 'data is required' in str(e.value)
             
-    def test_not_optional_rejects_absent_value(s):
+    def test_not_optional_not_allows_absent_value(s):
         v = vld.optional(flag=False)
         with pytest.raises(err.ValidationError) as e:
             v.run()
@@ -142,8 +142,8 @@ class TestRequiredProcessor:
         assert rv is uls._undef
 
 class TestNullProcessor:
-    def test_rejectnull(s):
-        v = vld.rejectnull()
+    def test_not_allownull(s):
+        v = vld.not_allownull()
         with pytest.raises(err.ValidationError) as e:
             v.run(None)
         assert 'must not be null' in str(e.value)
@@ -152,45 +152,45 @@ class TestNullProcessor:
         v = vld.allownull()
         assert v.run(None) is None
 
-    def test_allownull_is_rejectnull_set_to_false(s):
+    def test_allownull_is_not_allownull_set_to_false(s):
         v = vld.allownull()
-        assert isinstance(v, vld.rejectnull)
+        assert isinstance(v, vld.not_allownull)
         assert v.flag is False
 
-    def test_allownull_set_to_false_is_rejectnull_set_to_true(s):
+    def test_allownull_set_to_false_is_not_allownull_set_to_true(s):
         v = vld.allownull(flag=False)
-        assert isinstance(v, vld.rejectnull)
+        assert isinstance(v, vld.not_allownull)
         assert v.flag is True
 
-    def test_rejectnull_accepts_empty_and_false_values(s):
+    def test_not_allownull_accepts_empty_and_false_values(s):
         v = vld.allownull(flag=False)
         for d in ['',{},[],(),set(),False,0]:
             assert v.run(d)==d
 
 class TestEmptyProcessor:
-    def test_rejectempty(s):
-        v = vld.rejectempty()
+    def test_not_allowempty(s):
+        v = vld.not_allowempty()
         for d in ['',{},[],(),set()]:
             with pytest.raises(err.ValidationError) as e:
                 v.run(d)
             assert 'must not be empty' in str(e.value)
 
     def test_allowempty(s):
-        v = vld.rejectempty(flag=False)
+        v = vld.not_allowempty(flag=False)
         for d in ['',{},[],(),set()]:
             assert v.run(d)==d
 
-    def test_allowempty_is_rejectempty_set_to_False(s):
+    def test_allowempty_is_not_allowempty_set_to_False(s):
         v = vld.allowempty()
-        assert isinstance(v, vld.rejectempty)
+        assert isinstance(v, vld.not_allowempty)
         assert v.flag is False
 
-    def test_allowempty_set_to_false_is_rejectempty(s):
+    def test_allowempty_set_to_false_is_not_allowempty(s):
         v = vld.allowempty(flag=False)
-        assert isinstance(v, vld.rejectempty)
+        assert isinstance(v, vld.not_allowempty)
         assert v.flag is True
 
-    def test_rejectempty_accepts_None_and_False_values(s):
+    def test_not_allowempty_accepts_None_and_False_values(s):
         v = vld.allowempty(flag=False)
         for d in [None,False,0]:
             assert v.run(d)==d

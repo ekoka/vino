@@ -21,7 +21,8 @@ def is_primitive_type(data, state):
         return data
     # TODO more descriptive message
     raise err.ValidationError(
-        'Wrong type provided. Expected Primitive type, got {}.'.format(
+        'Wrong data type. Expected: Primitive (string, boolean, number).'
+        ' Got: "{}"'.format(
             type(data).__name__))
 
 def is_array_type(data, state):
@@ -35,7 +36,7 @@ def is_array_type(data, state):
         return list(data)
     # TODO more descriptive message
     raise err.ValidationError(
-        'Wrong type provided. Expected Array type, got {}.'.format(
+        'Wrong data type. Expected: Array. Got "{}"'.format(
         type(data).__name__))
 
 def is_object_type(data, state):
@@ -48,34 +49,48 @@ def is_object_type(data, state):
         pass
     # TODO more descriptive message
     raise err.ValidationError(
-        'Wrong type provided. Expected Object type, got {}'.format( 
+        'Wrong data type. Expected: Object. Got "{}"'.format( 
         type(data).__name__))
 
-class MandatoryClause:
-    __clause_name__ = None
 
-    @classmethod # good candidate for a polymorphic method
-    def adapt(cls, processor):
-        """ /!\ if you expect to work with your processor outside of vino, it's
-        probably best not to use this as a decorator.
-        """
-        adapter = ProcessorAdapter(processor)
-        adapter.__clause_name__ = cls.__clause_name__
-        return adapter
+"""
+It may not be obvious that two seemingly related processors are not, in fact,
+inverse of one another. Consider the hypothetical processor 'is_false' which 
+tests that an item is set specifically to `False`. Consider a different
+processor `is_true`, which for its part tests that value is specifically
+`True`. At first glance they seem to represent the inverse of one another, but
+the consider that a more accurate inverse of `is_true` would, in fact, be an 
+`isnot_true` processor, which would simply test that its inverse returns fails.
 
-class ProcessorAdapter:
-    def __init__(self, fnc):
-        self.fnc = fnc
+In other situations, however, two processors may indeed just be semantic
+opposite of one another. Consider the `optional` processor, which is really
+just another way of specifying that something  is `not_required`. Likewise the
+inverse of `optional`, `not_optional` is an alias for `required`.
 
-    def __call__(self, *a, **kw):
-        return self.fnc(*a, **kw)
+When creating a `BooleanProcessors` although it's adviseable to let Vino
+implicitly create the inverse class, it's possible to explicitly do so
+yourself.  
 
-    def run(self, *a, **kw):
-        return self.fnc.run(*a, **kw)
+If you want to let Vino do the work, only one of the classes needs to be
+created. The `MetaBooleanProcessor` will create the inverse formalize the
+association. 
 
-class Optional(prc.BooleanProcessor, MandatoryClause): pass
-class Required(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'required'
+One of the BooleanProcessor or its inverse *must* declare a `run()` method, or
+an error will be raised as both processors will be considered inactive.
+
+Also see the definition of `MetaBooleanProcessor` which intervenes during the
+creation of these classes to attach them to their inverse.
+
+The `MandatoryClauses` are used by Vino's `Schema` to curate validation Context
+creation. The `Schema` ensures that cases where data is either null, missing,
+or blank are accounted for through the automatic insertion of a processor for
+each of the 'REQUIRED', 'NULL' and 'EMPTY' families of mandatory Processors
+when they're found to be missing from a `Schema` declaration.
+"""
+
+class Optional(prc.BooleanProcessor, prc.MandatoryClause): pass
+class Required(prc.BooleanProcessor, prc.MandatoryClause):
+    __clause_name__ = prc.MandatoryClause.REQUIRED
     __inverse__=Optional
 
     def run(self, data=uls._undef, state=None):
@@ -83,9 +98,9 @@ class Required(prc.BooleanProcessor, MandatoryClause):
             raise err.ValidationError('data is required')
         return data
 
-class AllowNull(prc.BooleanProcessor, MandatoryClause): pass
-class RejectNull(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'null'
+class AllowNull(prc.BooleanProcessor, prc.MandatoryClause): pass
+class NotAllowNull(prc.BooleanProcessor, prc.MandatoryClause):
+    __clause_name__ = prc.MandatoryClause.NULL
     __inverse__ =AllowNull
 
     def run(self, data=uls._undef, state=None):
@@ -93,63 +108,64 @@ class RejectNull(prc.BooleanProcessor, MandatoryClause):
             raise err.ValidationError('data must not be null')
         return data
 
-class AllowEmpty(prc.BooleanProcessor, MandatoryClause): pass
-class RejectEmpty(prc.BooleanProcessor, MandatoryClause):
-    __clause_name__ = 'empty'
+class AllowEmpty(prc.BooleanProcessor, prc.MandatoryClause): pass
+class NotAllowEmpty(prc.BooleanProcessor, prc.MandatoryClause):
+    __clause_name__ = prc.MandatoryClause.EMPTY
     __inverse__ = AllowEmpty
 
     def run(self, data=uls._undef, state=None):
         if self.flag and data in ((), {}, '', set(), []):
-            raise err.ValidationError('data must not be empty')
+                raise err.ValidationError('data must not be empty')
         return data
 
 # aliases
-required = Required
-optional = Optional
+not_optional = required = Required
+not_required = optional = Optional
 allowempty = AllowEmpty
 allownull = AllowNull
-rejectempty = RejectEmpty
-rejectnull = RejectNull
+not_allowempty = NotAllowEmpty 
+not_allownull = NotAllowNull
 
-class isnotint(prc.BooleanProcessor):
-
-    def __init__(self, onfail=None, cast=False, bool_as_int=False):
-        self.onfail = onfail
-        self.isint = isnotint.__inverse__(cast=cast, bool_as_int=bool_as_int)
-
-    def run(self, data=uls._undef, state=None):
-        try:
-            self.isint.run(data)
-        except err.ValidationError:
-            return data
-            #TODO: better message
-        raise err.ValidationError('value should not be an integer.')
-
-
-class isint(prc.BooleanProcessor):
+#TODO: better error messages
+class isnot_int(prc.BooleanProcessor): pass
+class is_int(prc.BooleanProcessor):
     __clause_name__ = 'int'
-    __inverse__ = isnotint
-
-    def __init__(self, onfail=None, cast=False, bool_as_int=False):
-        self.onfail = onfail
-        self.cast = cast
-        self.bool_as_int = bool_as_int
+    __inverse__ = isnot_int
 
     def run(self, data=uls._undef, state=None):
-        data = self._cast(data)
-        if not uls.is_intlike(data, bool_as_int=self.bool_as_int):
-            #TODO: better message
-            raise err.ValidationError('wrong data type expected int')
+        if data is None or data is uls._undef:
+            # do not handle special cases, leave them to other specialized
+            # processors.
+            return data
+        if self.flag:
+            if not uls.is_intlike(data, bool_as_int=False):
+                raise err.ValidationError('Wrong data type. Expected: "int"')
+        else:
+            if uls.is_intlike(data, bool_as_int=False):
+                raise err.ValidationError(
+                    'Wrong data type. Not expected: "int"')
         return data
 
-    def _cast(self, data):
-        if self.cast: 
-            if self.cast is True:
-                fnc = int
-            else:
-                fnc = self.cast
-            try:
-                return fnc(data)
-            except:
-                pass
+class isnot_str(prc.BooleanProcessor): pass
+class is_str(prc.BooleanProcessor):
+    __clause_name__ = 'str'
+    __inverse__ = isnot_str
+
+    def run(self, data=uls._undef, state=None):
+        if data is None or data is uls._undef:
+            # do not handle special cases, leave them to other specialized
+            # processors.
+            return data
+        if self.flag: 
+            if not uls.is_str(data):
+                raise err.ValidationError('Wrong data type. Expected: "str"')
+        else:
+            if uls.is_str(data):
+                raise err.ValidationError(
+                    'Wrong data type. Not expected: "str"')
         return data
+
+
+__all__ = [
+    'required', 'optional', 'allownull', 'allowempty', 'is_int', 'is_str',
+]

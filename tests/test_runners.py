@@ -428,7 +428,7 @@ class TestRunnerStack:
         rs.add_qualifiers([0,1])
         qstack = rs[-1]['qualifiers']
         qualifiers = qstack.qualifiers
-        assert qualifiers['indexes']=={0,1}
+        assert qualifiers['indices']=={0,1}
 
     def test_successive_qualifier_applications_merges_qualifiers(self, tags):
         processors = ((t, None) for t in tags)
@@ -438,11 +438,11 @@ class TestRunnerStack:
         rs.add_qualifiers([0,1])
         qstack = rs[-1]['qualifiers']
         qualifiers = qstack.qualifiers
-        assert qualifiers['indexes']=={0,1}
+        assert qualifiers['indices']=={0,1}
         rs.add_qualifiers([1,3,8])
-        assert qualifiers['indexes']=={0,1,3,8}
+        assert qualifiers['indices']=={0,1,3,8}
         rs.add_qualifiers(9,5,0,1)
-        assert qualifiers['indexes']=={0,1,3,8,9,5}
+        assert qualifiers['indices']=={0,1,3,8,9,5}
 
     def test_run_method_returns_value(s, randstr):
         context = None

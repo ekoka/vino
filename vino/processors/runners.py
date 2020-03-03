@@ -4,35 +4,48 @@ from .. import errors as err
 
 class Runner:
 
-    ProcProxy = namedtuple('ProcProxy', 
-                        'run default override failsafe raw_processor')
+    ProcProxy = namedtuple(
+        'ProcProxy', 'run default override failsafe raw_processor')
 
     def __init__(self, processor):
-        """ Provides a simple interface to run a process. 
-        
+        """ 
+        Provides a simple interface to run a process. 
         The Runner allows to decouple the Processor's initialization steps from
-        the Context. By being wrapped in a third-party object, it simplifies
-        the interface the Context needs to work with.
+        the Context. By wrapping processing in a separate object, the interface 
+        the Context needs to work with is simplified. If a processor has a 
+        `vino_init()` method it will be called here and its return value will
+        be used as processor instead of the instance originally received.
+        This is how the native `BooleanProcessors` work when not instantiated.
 
-        If a processor has a `vino_init()` method it will be called.
-        It allows to pass a construct to vino that may have to return some
-        other object as processor. This is how the native `BooleanProcessors`
-        work when not instantiated. For example When specifying adding a
-        `vino.mandatory` processor its construction is simply delayed and a
-        call to its `vino_init()` method is made here, which returns an actual
-        instance for the Runner to work with.
+            >>> from vino.schema import obj, prim 
+            >>> from vino.processors import AllowNull, AllowEmpty
+            >>> user = obj(
+            ...     prim(is_str, allowempty, allownull, required).apply_to(
+            ...         'firstname', 'lastname')
+            ... )
+
+        The above example adds the `AllowNull`, `AllowEmpty`, and `Required`
+        processors, to a `PrimitiveTypeSchema`, but their construction really
+        happens later, when the Context of the schema wraps them in `Runners`
+        later. A call to their `vino_init()` method is then made here,
+        which returns an actual instance for the `Runner` to work with.
         """
+
         try: 
             # calling an initializer if any
             processor = processor.vino_init()
         except AttributeError:
             pass
-        self._raw_processor = processor
         self.name = getattr(processor, 'name', None)
+        self._raw_processor = processor
         self.processor = self.get_processor_proxy(processor)
 
     @classmethod
     def get_processor_proxy(cls, processor):
+        """
+        Wrap the processor in a namedtuple to normalize its internal usage by
+        the Runner.
+        """
         default = getattr(processor, 'default', None)
         override = getattr(processor, 'override', None)
         failsafe = getattr(processor, 'failsafe', None)

@@ -1,5 +1,5 @@
 import pytest
-from vino.api import schema as shm
+from vino import schema as shm
 from vino.processors import validating as  vld
 from vino import errors as err
 
@@ -26,16 +26,16 @@ class TestSchema:
         #    prim.validate()
         #assert 'data is required' in str(e.value[0])
 
-    def test_adds_rejectempty_processor_if_no_empty_clause_found(s, prim):
+    def test_adds_not_allowempty_processor_if_no_empty_clause_found(s, prim):
         assert isinstance(prim.runners[2]['runner']._raw_processor, 
-                          vld.rejectempty)
+                          vld.not_allowempty)
         #with pytest.raises(err.ValidationErrorStack) as e:
         #    prim.validate('')
         #assert 'data must not be empty' in str(e.value[0])
 
-    def test_adds_rejectnull_processor_if_no_null_clause_found(s, prim, mocker):
+    def test_adds_not_allownull_processor_if_no_null_clause_found(s, prim, mocker):
         assert isinstance(prim.runners[3]['runner']._raw_processor, 
-                          vld.rejectnull)
+                          vld.not_allownull)
         #mk_alwnl = mocker.patch.object(vld.allownull, 'run')
         #prim.validate(None)
         #mk_alwnl.assert_called_once_with(None, prim)
@@ -61,7 +61,7 @@ class TestSchema:
 
     def test_doesnt_add_implicit_allownull_processor_if_one_provided(s):
         p0 = lambda *a: None
-        p1 = vld.rejectnull()
+        p1 = vld.not_allownull()
         prim = shm.PrimitiveTypeSchema(p0, p1)
         assert len(prim.runners)==5
         # added right after primitive type, required, and p0,
@@ -97,9 +97,9 @@ class TestObjectTypeSchema:
         o = shm.obj(shm.prim().apply_to('field_1'))
         assert o.runners[1]['runner']._raw_processor is vld.is_object_type
 
-    def test_should_reject_prim(s):
+    def test_should_not_allow_prim(s):
         o = shm.obj(shm.prim().apply_to('field_1'))
         with pytest.raises(err.ValidationErrorStack) as e:
             o.validate('some string')
-        assert 'Wrong type provided' in str(e.value[0])
+        assert 'Wrong data type' in str(e.value[0])
 

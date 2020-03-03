@@ -1,6 +1,6 @@
 from vino import contexts as ctx
 from vino import errors as err
-from vino.api.schema import obj, prim
+from vino.schema import obj, prim
 from vino.processors import processors as proc
 import pytest
 

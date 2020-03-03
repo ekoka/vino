@@ -1,12 +1,30 @@
 from . import utils as uls
 from . import errors 
 
+"""
+Qualifiers specify to which items or properties a declaration should apply.  
+
+    >>> from vino import obj, arr, prim
+    >>> from vino.processors import required, allownull, allowempty, is_str
+    >>> user = obj(
+    ...     prim(~required, allownull, allowempty, is_str).apply_to(
+    ...         'first_name', 
+    ...         'last_name', 
+    ...         'phone', 
+    ...         'email'),
+    ...     arr(allowempty, ~allownull,~required).apply_to('technologies'),
+    ... )
+
+In the above declaration, the qualifiers are "first_name", "last_name",
+"phone", "email", and "technologies".
+"""
+
 class Qualifier:
     def qualify(self, item, index=None): pass
 
 class ItemQualifierStack:
     """
-    In JSON, this would conceptually be the stack of qualifiers that drives the
+    In JSON, this would conceptually be the stack of qualified indices that drives the
     processing of an Array.
     """
 
@@ -15,50 +33,52 @@ class ItemQualifierStack:
 
     @property
     def qualifiers(self):
-        # The qualifier stacks. Note that unlike the 'calls' stack, the
-        # 'indexes' stack is a set, not a list, thus it cannot influence the
-        # order in which properties are processed.
-        # if such control is needed, simply declare processing one after
-        # the other during Context creation.
+        """
+        The stack of qualifiers. Note that unlike the `callables` stack, the
+        stack of `indices` is actually a set, not a list, thus it cannot
+        influence the order in which items are processed.
+
+        Items are always processed following the normal flow of indices. If
+        you need to break out of that sequence you can declare multiple
+        processors and isolate the relevant indices with different qualifiers.
+
+        """
         if not hasattr(self, '_qualifiers'):
             self._qualifiers = {
-                'indexes': set(),
-                'calls': [],
+                'indices': set(),
+                'callables': [],
             }
         return self._qualifiers
 
     def empty(self):
-        return not (self.qualifiers['indexes'] or self.qualifiers['calls'])
+        return not (self.qualifiers['indices'] or self.qualifiers['callables'])
 
 
     def add(self, *qualifiers):
         for qualifier in qualifiers:
             if uls.is_intlike(qualifier):
-                self.qualifiers['indexes'].add(qualifier)
-                # when a qualifier is an integer it's added to the 'indexes'
-                # stack
+                self.qualifiers['indices'].add(qualifier)
+                # when qualifier is integer add to stack of 'indices'
             elif uls.is_iterable(qualifier):
-                # when a qualifier is iterable it's added to the 'indexes' 
-                # stack as well
-                [self.qualifiers['indexes'].add(i) for i in qualifier]
+                # when qualifier is iterable add to stack of 'indices' as well
+                [self.qualifiers['indices'].add(i) for i in qualifier]
             elif callable(qualifier):
-                # when a qualifier is callable it's added to the 'calls' 
-                # stack
-                self.qualifiers['calls'].append(qualifier)
+                # when qualifier is callable add to 'callables'
+                self.qualifiers['callables'].append(qualifier)
             else:
-                # array structures' qualifiers are limited to 'indexes' and
-                # 'calls', anything else is an error.
+                # array structures' qualifiers are limited to 'indices' and
+                # 'callables', anything else is an error.
                 # TODO: more descriptive error
                 raise errors.VinoError('Invalid Qualifier')
 
     def index_match(self, idx):
-        # is the provided index present in the 'indexes' stack?
-        return idx in self.qualifiers['indexes']
+        # is the provided index present in the 'indices' stack?
+        return idx in self.qualifiers['indices']
 
     def call_match(self, idx, data):
-        # if any of the 'calls' stack qualifiers returns True for the provided  
+        # if any of the 'callables' stack qualifiers returns True for the provided  
         # index, return True
-        for call in self.qualifiers['calls']:
+        for call in self.qualifiers['callables']:
             if call(idx, data):
                 return True
 
@@ -90,6 +110,7 @@ class ItemQualifierStack:
         return state['matches']
 
     def apply(self, data, runner, state):
+        # TODO: Test
         matches = self._get_matches(state)
         rv = []
         for i,d in enumerate(data): 
@@ -118,15 +139,17 @@ class MemberQualifierStack:
 
     @property
     def qualifiers(self):
-        # The qualifier stacks. Note that unlike the 'calls' stack, the
-        # 'keys' stack is a set, not a list, thus it cannot influence the
-        # order in which properties are processed.
-        # if such control is needed, simply declare processors one after
-        # the other during Context creation.
+        """
+        The stack of qualifiers. Note that unlike the `callables` stack, the
+        `keys` stack is a set, not a list, thus it cannot influence the
+        order in which properties are processed.
+        if such control is needed, simply declare processors one after
+        the other during Context creation.
+        """
         if not hasattr(self, '_qualifiers'):
             self._qualifiers = {
                 'keys': set(),
-                'calls': [],
+                'callables': [],
             }
         return self._qualifiers
 
@@ -138,7 +161,7 @@ class MemberQualifierStack:
             elif uls.is_iterable(qualifier):
                 [self.qualifiers['keys'].add(i) for i in qualifier]
             elif callable(qualifier):
-                self.qualifiers['calls'].append(qualifier)
+                self.qualifiers['callables'].append(qualifier)
             else:
                 # TODO: more descriptive error
                 raise errors.VinoError('Invalid Qualifier')
@@ -147,7 +170,7 @@ class MemberQualifierStack:
         return key in self.qualifiers['keys']
 
     def call_match(self, key, data):
-        for call in self.qualifiers['calls']:
+        for call in self.qualifiers['callables']:
             if call(key, data):
                 return True
 

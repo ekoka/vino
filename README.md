@@ -7,11 +7,12 @@
 
 ### In Vino Veritas (In wine lies the truth)
 
-**Vino** (pronounced vee-noh) is a Python data validation toolkit that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`. Vino is versatile, you can use it as a library to directly handle validations in your application, or it can become the engine that powers your own validation library that provides a layer of abstraction in the form of an alternative declarative syntax.
+**Vino** (pronounced vee-noh) is a Python data validation toolkit that aims to be quick to learn, intuitive to use, while also providing enough flexibility to cover a wide range of validation scenarios. It was designed to work mainly with data that is transported and structured in the main JSON data types, namely `Number`, `String`, `Boolean`, `Array`, `Object`, and `null`, once they've been converted to their Python equivalent: `int` or `float`, `string`, `boolean`, `list`, `dict`, and `None`. 
+
 
 ### The rationale behind Vino: 
 
-Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. For one reason or another, however, I've never been completely satisfied with what existing libraries allow me to do in my applications. I've sometimes wanted a level of control over the validation steps that I've never found. Then one day I sat and I started building Vino. 
+Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. Most Python validation libraries tend to be declarative. You describe a schema and during validation the data is processed against it. Vino take a procedural approach by contrast. You not only describe what you want, but the sequence of those events also matters. 
 
     #TODO quick example should go here
 
@@ -37,7 +38,7 @@ Vino schemas are made up of 4 main components:
     
     #TODO this excerpt should go under the paragraph discussing creation of Processors
 
-Except for 3 special cases (discussed a bit later), Vino makes little distinction between processors, they all take the same elements as input, raise some `VinoValidation` error when they fail to perform their task, or return the valid data on success.
+Except for 3 special cases (discussed a bit later), Vino makes little distinction between processors, they all take the same elements as input, raise some `vino.Validation` error when they fail to perform their task, or return the valid data on success.
 
 One of the first things you'll notice with Vino is the syntax that doesn't use the popular approach of describing a schema with a dictionary or a class. Vino was designed as a library that is conceptually simple to understand and use, yet flexible and powerful. Something to allow anyone to quickly write some simple functions to validate their data. In that spirit, there is a strong focus in keeping its syntax succinct. It does not, however, prohibits for some wrappers to supplement it with a domain-specific syntax which then proxies to its validation engine.
 
