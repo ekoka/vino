@@ -61,7 +61,7 @@ class ItemQualifierStack:
                 # when qualifier is integer add to stack of 'indices'
             elif uls.is_iterable(qualifier):
                 # when qualifier is iterable add to stack of 'indices' as well
-                [self.qualifiers['indices'].add(i) for i in qualifier]
+                self.qualifiers['indices'].update(i for i in qualifier)
             elif callable(qualifier):
                 # when qualifier is callable add to 'callables'
                 self.qualifiers['callables'].append(qualifier)
