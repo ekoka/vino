@@ -1,4 +1,5 @@
-##  /!\ Warning /!\ This is a WIP. Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and cranes :) Feel free to download the code to play in *non-critical* settings.
+## /!\ This library is a WIP
+Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and cranes :) Feel free to download the code to play in *non-critical* settings.
 
 # Vino: a data validation toolkit
 
