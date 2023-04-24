@@ -1,7 +1,4 @@
-###  \*\*\* This is a work in progress \*\*\*
-#### Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and cranes ;)
-
-#### Feel free to download the code to play in non-critical settings.
+##  /!\ Warning /!\ This is a WIP. Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and cranes :) Feel free to download the code to play in *non-critical* settings.
 
 # Vino: a data validation toolkit
 
@@ -14,7 +11,9 @@
 
 Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. Most Python validation libraries tend to be declarative. You describe a schema and during validation the data is processed against it. Vino take a procedural approach by contrast. You not only describe what you want, but the sequence of those events also matters. 
 
-    #TODO quick example should go here
+##--- TODO 
+quick example should go here
+##---
 
 To give a simplified and very abstract overview of the concepts behind a Vino schema, it will typically be made up of 2 types of constructs: contexts and instructions, arranged together to guide validation in a precise sequence.
 
@@ -36,7 +35,9 @@ Vino schemas are made up of 4 main components:
 - **Arrays**: represent JSON *arrays*. The data to validate may contain a collection of unnamed items that can be *Primitives*, *Arrays*, or *Objects*.
 - **Processors**: these are the constructs that hold the validation logic. They're tasked with either validating, transforming, ignoring, or sometimes removing data items submitted for validation.
     
-    #TODO this excerpt should go under the paragraph discussing creation of Processors
+##--- TODO 
+the next paragraphs should go under the section discussing creation of Processors.
+##---
 
 Except for 3 special cases (discussed a bit later), Vino makes little distinction between processors, they all take the same elements as input, raise some `vino.Validation` error when they fail to perform their task, or return the valid data on success.
 
@@ -45,45 +46,45 @@ One of the first things you'll notice with Vino is the syntax that doesn't use t
 The simplicity of Vino's syntax is deceptive in its flexibility and what it allows one to do. The follwing is a demonstration of how one could declare a user schema. Note that the example is purposely very explicit and detailed for demonstrative reasons. In reality, there are numerous opportunities for more compact declarations (e.g. through abstractions, reusable constructs, partials, etc). 
 
 
-```python
-# first import the 3 basic context constructs: primitive, array, and object
-from vino import prim, arr, obj
-# then import some validating processors
-from vino.processors.validating import (
-    required, notrequired,
-    notrejectnull, rejectnull, 
-    notrejectempty, rejectempty, 
-    string, checkuuid, 
-    maxlength, minlength, 
-    mustmatch
-)
-# then import some marshalling processors
-from vino.processors.marshalling import (
-    strip, camelcase, stringify
-)
+    ```python
+    # first import the 3 basic context constructs: primitive, array, and object
+    from vino import prim, arr, obj
+    # then import some validating processors
+    from vino.processors.validating import (
+        required, notrequired,
+        notrejectnull, rejectnull, 
+        notrejectempty, rejectempty, 
+        string, checkuuid, 
+        maxlength, minlength, 
+        mustmatch
+    )
+    # then import some marshalling processors
+    from vino.processors.marshalling import (
+        strip, camelcase, stringify
+    )
 
-# some custom processors
-from .my_validation_utils import (
-    address_schema, 
-    check_email
-)
+    # some custom processors
+    from .my_validation_utils import (
+        address_schema, 
+        check_email
+    )
 
-user_schema = obj(                                                      # (0)
-    prim(required, string, strip, notrejectnull, rejectempty, 
-        check_email).apply_to('email')                                  # (1)
-    prim(notrequired, string, strip, rejectnull, rejectempty,
-         minlength(10), maxlength(500)).apply_to('password'),           # (2)
-    prim(notrequired, string, strip, notrejectnull, rejectempty,
-         camelcase).apply_to('first_name', 'last_name')                 # (3)
+    user_schema = obj(                                                      # (0)
+        prim(required, string, strip, notrejectnull, rejectempty, 
+            check_email).apply_to('email')                                  # (1)
+        prim(notrequired, string, strip, rejectnull, rejectempty,
+            minlength(10), maxlength(500)).apply_to('password'),           # (2)
+        prim(notrequired, string, strip, notrejectnull, rejectempty,
+            camelcase).apply_to('first_name', 'last_name')                 # (3)
 
 
 
-try:
-    sane_data = user_schema.validate(user_data)                         # (4)
-    db.User.get(user_id=sane_data.get('user_id'))                       # (5)
-except vino.ValidationError as e:
-    raise HTTPError(400, e.msg)                                         # (6)
-```
+    try:
+        sane_data = user_schema.validate(user_data)                         # (4)
+        db.User.get(user_id=sane_data.get('user_id'))                       # (5)
+    except vino.ValidationError as e:
+        raise HTTPError(400, e.msg)                                         # (6)
+    ```
 
 0. open an object type context declaration as a global container for our validation. This is typical since, whether for practical reasons or out of necessity, data is often transported as part of a wrapping construct which is usually a JSON object.
 
@@ -93,14 +94,15 @@ except vino.ValidationError as e:
     - Finally, observe that most Vino native processors are grouped into either *validating* or *marshalling*. Vino's validating processors typically do not modify values, they either raise an error or return the value that they received. Whereas, Vino's marshalling processors typically do not raise errors, but simply apply their modifications to the data that they're designed to modify. For example, the `strip` marshalling processor only removes whitespace padding from strings. If something is not a string, it does nothing and simply returns the value it received. Of course, you're free to handle things differently in your own processors. Vino's processors all have the same signature and mechanism and Vino does not enforce a particular philosophy.
 
 2. The `password` property is validated in a primitive type context. Its first processor explicitly flags it as a property that *is not required*, which means that it's an optional property and if absent from the validated data, its entire validation chain will simply be skipped. The subsequent processors are self explanatory.
-
-try:
-    sane_data = user_schema.validate(user_data)                         # (4)
-    db.User.get(user_id=sane_data.get('user_id'))                       # (5)
-except vino.ValidationError as e:
-    raise HTTPError(400, e.msg)                                         # (6)
-
 3. The same context is applied to the `first_name` and `last_name` properties. Its processors follow similar patterns to the above.
+
+    ```python
+    try:
+        sane_data = user_schema.validate(user_data)                         # (4)
+        db.User.get(user_id=sane_data.get('user_id'))                       # (5)
+    except vino.ValidationError as e:
+        raise HTTPError(400, e.msg)                                         # (6)
+    ```
 
 4. The schema is then applied to some untrusted data and if everything goes well, a validated and marshalled version is returned.   
 
@@ -110,6 +112,7 @@ except vino.ValidationError as e:
 
 It should be noted that schema objects are not immutable, but to ensure their safe reusability their API makes the mutability explicit, not accidental. So when adding new processors to a Schema, you're in fact returning another schema, not extending the current one.
 
+    ```python
     my_schema = obj(
         ...
     ).add(
@@ -124,17 +127,18 @@ It should be noted that schema objects are not immutable, but to ensure their sa
     # processor that checks wether a `user_id` has been sent with the 
     # data, if not it signals that this is probably a new user data and
     # a check for username unicity is warranted.
+    ```
 
 Vino's approach to data validation is that of a script, there's a precise set of instructions to follow to arrive at a desired result. It's akin to how a cooking recipe works. In this analogy the Primitives, Arrays and Objects in the schema can be seen as the recommended ingredients from the recipe book, whereas the incoming data represents the actual ingredients you'll be working with, and the Processors are the required steps to achieve what you want, and the resulting data is the cake. If during processing a validating processor can't complete its job, it raises an error with details about what went wrong. Unless specifically configured to do so, marshalling processors do not raise an error on failure. Except for very few exceptions (see Smart vs Explicit mode and Special Processors), processing happens in the exact order in which the schema and processors are declared.
 
-Primitives
-----------
+# Primitives
 
 You create a Primitive construct with `vino.prim()`.
 
 A simple Primitive with only the `datalist()` processor explicitly added. We want
 a validator that will accept only the string 'Vim':
 
+    ```python
     from vino.processors import datalist
     v = vino.prim(datalist(u'Vim'))
     v.validate(u'Vim')                  # True
@@ -142,14 +146,18 @@ a validator that will accept only the string 'Vim':
     # let's not be so dogmatic...
     v = vino.prim(datalist(u'Vim', u'Emacs'))
     v.validate(u'Emacs')                # True
+    ```
 
 Some more processors explicitly added.
 
+    ```python
     from vino.processors import allowblank, notrejectnull, checktype, checkpattern
+    ```
 
 You can also create your own processors. A simple processor to strip white spaces
 (see `Processors Creation`).
 
+    ```python
     def strstrip_processor(input): 
         return input.strip()     
         
@@ -162,18 +170,15 @@ You can also create your own processors. A simple processor to strip white space
         allowblank(False), notrejectnull(True)
     )
     email_schema.validate('michael@sundry.ca') # True
+    ```
 
 
-Arrays
-------
 
-You create an Array schema with the `vino.arr()` or `vino.a()` constructors.
-In the next example we want a validator for an array whose items are only
-allowed to be strings, booleans or null. Note that Vino makes a distinction
-between null values and empty values (empty strings, empty arrays, empty
-object). In this example although the validator accepts null values it doesn't
-also accept empty strings.
+# Arrays
 
+You create an Array schema with the `vino.arr()` or `vino.a()` constructors. In the next example we want a validator for an array whose items are only allowed to be strings, booleans or null. Note that Vino makes a distinction between null values and empty values (empty strings, empty arrays, empty object). In this example although the validator accepts null values it doesn't also accept empty strings.
+
+    ```python
     from vino.processors import batch, items 
     arr_schema = vino.arr(
         items(batch(
@@ -185,18 +190,20 @@ also accept empty strings.
     arr_schema.validate(['Jen', 'Paula', False, 123])  # fails: int type value
     arr_schema.validate(['Jen', ""])                   # fails: empty string
     arr_schema.validate(['Jen', None])                 # passes, null allowed
+    ```
 
-In the previous example the schema is declared for all array items at once. It
-will only accept strings, booleans and null.
+In the previous example the schema is declared for all array items at once. It will only accept strings, booleans and null.
 
 When validating an Array you're working in two contexts: 
-- the context of the Array itself as a whole (min/max length, sorting of
-  elements, trimming, slicing, splicing of the array, etc).
+- the context of the Array itself as a whole (min/max length, sorting of elements, trimming, slicing, splicing of the array, etc).
 
+    ```python
     arr_schema = vino.arr(minlength(4), maxlength(8), my_sorting_fnc)
+    ```
 
 - the context of the items represented by `items()`
     
+    ```python
     itemsvalidation = items(batch(
         checktype('str', obj(...), 'bool', prim(...))
     ))
@@ -206,31 +213,30 @@ When validating an Array you're working in two contexts:
         my_sorting_fnc, 
         itemsvalidation
     )
+    ```
     
-#############################################################################
-####### TODO: review these 2 paragraphs to determine which is which. ########
+##--- TODO
+review the next two paragraphs to determine which is which.
 
-    Validation of array items present some notable exceptions to the usual rules:
-        - to validate items of an array you put them in an `items()` construct.
-        - all processors that are declared as part of the `batch()` are part of a "bundle" that will be validated in a batch. 
-        - validation of items within a batch always happens in the ordered sequence of those items.
-        - within the `items()` declaration, processors still obey the order of declaration.
+Validation of array items present some notable exceptions to the usual rules:
+    - to validate items of an array you put them in an `items()` construct.
+    - all processors that are declared as part of the `batch()` are part of a "bundle" that will be validated in a batch. 
+    - validation of items within a batch always happens in the ordered sequence of those items.
+    - within the `items()` declaration, processors still obey the order of declaration.
 
-    ------
 
-    Validation of array items present some notable exceptions to the usual rules:
-        - to validate items of an array you put them in an `items()` construct.
-        - all items that are declared in a `batch()` are part of a "bundle" that will be validated in a batch. 
-        - validation of items within a bundle always happens in the ordered sequence of those items, not their individual declaration (if any).
-        - individual declaration of items in a bundle serves to affect the validation of those specific items, not to give order or priority to their validation.
-        - within the bundle declaration (`items()`), processors still do obey the order of declaration.
+Validation of array items present some notable exceptions to the usual rules:
+    - to validate items of an array you put them in an `items()` construct.
+    - all items that are declared in a `batch()` are part of a "bundle" that will be validated in a batch. 
+    - validation of items within a bundle always happens in the ordered sequence of those items, not their individual declaration (if any).
+    - individual declaration of items in a bundle serves to affect the validation of those specific items, not to give order or priority to their validation.
+    - within the bundle declaration (`items()`), processors still do obey the order of declaration.
 
-#############################################################################
+##---
 
-Validating all array items at once is probably the most common use-case, but
-it's also possible to craft a schema that specifies a declaration for
-individual items.
+Validating all array items at once is probably the most common use-case, but it's also possible to craft a schema that specifies a declaration for individual items.
 
+    ```python
     from vino.processors import minitems, maxitems
     arr_schema = vino.arr(
         items(vino.prim(checktype('str', 'bool')),           # validates first item
@@ -245,11 +251,13 @@ individual items.
     arr_schema.validate(['John', 'Mark', None]) # fails: null not allowed on 3rd item
     arr_schema.validate(['John', ""])           # fails: second item must be an int
     arr_schema.validate(['John', None])         # passes, see explanation next
+    ```
 
-The third validation case passes because, (a) the first and second items conform to the specs and (b) the remaining items in the schema are not required as per the declaration `minitems(2)`.
+The third validation case passes because, (a) the first and second items conform to the specs, and (b) the remaining items in the schema are not required as per the declaration `minitems(2)`.
 
 What if you have 50 items in your array and you would like to validate the first 48 according to the same rules, and the last 2 with individual ones?
 
+    ```python
     first48 = batch(range=range(48), checktype('str', 'int'))
     a = vino.arr(
         items(first48, 
@@ -257,29 +265,23 @@ What if you have 50 items in your array and you would like to validate the first
               vino.a(...),
         )
     )
+    ```
 
-In fact you can target individual items for validation by passing a list of
-indices (or an equivalent iterable) as the first attribute to `batch()` or to the
-`range` parameter.
+In fact you can target individual items for validation by passing a list of indices (or an equivalent iterable) as the first attribute to `batch()` or to the `range` parameter.
 
+    ```python
     even = batch(range(0,50,2), checktype('str'), datalist('red', 'yellow', 'purple'))
     odd = batch(range(1,50,2), checktype('str'), datalist('blue', 'green', 'white'))
     a = vino.arr(items(odd, even))
+    ```
 
-#TODO: 
-========
-find a better way to handle this. As it is the validation will first
-process the even batch then the odd. I'd like something that can process a
-zipped batch to stay consistent with the scripted character of the library.
+##--- TODO
+Find a better way to handle this. As it is the validation will first process the even batch then the odd. I'd like something that can process a zipped batch to stay consistent with the scripted character of the library. 
 
-one solution would be to apply a flag at the array level to specify the kind
-of sequencing should be followed for validation. It would specify in which
-order the data items are validated, 
-case 1: iterate through the list of data items and match their position with
-one or more batches before applying the validation.
-case 2: iterate through the batches and apply validations to each matching
-item.
-========
+One solution would be to apply a flag at the array level to specify the kind of sequencing should be followed for validation. It would specify in which order the data items are validated, 
+- case 1: iterate through the list of data items and match their position with one or more batches before applying the validation. 
+- case 2: iterate through the batches and apply validations to each matching item.
+##---
 
 
 - Objects: a representation of a json object, an object holds a set of other
@@ -451,8 +453,9 @@ Let's drive the point home with some code:
     ...     # meanwhile the following will have its 3 *implicit* processors set to False.
     ...     first_name_schema = prim(name('first_name'))
 
------
-# TODO: New content to review
+##--- TODO
+New content to review
+##---
 
 
 - How to handle missing, blank and null fields:
@@ -552,7 +555,9 @@ for all three types.
     data['email'] = None
     validate(data, user_schema) # will pass
 
-# TODO: explain the rationale in making a distinction between null and empty values
+##--- TODO
+explain the rationale in making a distinction between null and empty values
+##---
 
 - handling null values
 Only `None` is considered a null value from within Python. Just like with
@@ -628,16 +633,13 @@ The `failed` attribute and `throw()` and `end()` processors
 
 - there may be situations where instead of having your validation raise an error you want to handle things differently. You can pass a list of processors to the `failed` attribute :
 
-    # TODO: better explain this example
-    e.g. Consider the case of a user profile form that you use both for
-    registration and for updates. The form has both `password` and
-    `confirm_password` fields. If you submit the `password` field you want to
-    ensure that the `confirm_password` field also matches. If you don't submit
-    `password`, you don't just want the `required` validation to fail, you
-    want to first make sure that the user indeed already exists, if it's the
-    case you want to end validation for the `password` field and move on to
-    the next field.
+##--- TODO
+Better explain this example.
+##---
 
+E.g. Consider the case of a user profile form that you use both for registration and for updates. The form has both `password` and `confirm_password` fields. If you submit the `password` field you want to ensure that the `confirm_password` field also matches. If you don't submit `password`, you don't just want the `required` validation to fail, you want to first make sure that the user indeed already exists, if it's the case you want to end validation for the `password` field and move on to the next field.
+
+    ```python
     from vino.processors import exclude_field, field_match 
     from my.own.processors import check_user_exists
     user_schema = vino.obj(
@@ -651,19 +653,16 @@ The `failed` attribute and `throw()` and `end()` processors
                         end()
                     )
                 ), 
-                field_match('confirm_password')
+                not_match_old_passwords('confirm_password')
         ),
         exclude_field(['user_id']) 
         
     )
+    ```
 
-In the above example, note how we use the `exclude_field` processor to remove the
-value of `user_id` from the returned data. If you think about it after
-validating the data, we don't actually want to push the user_id back in the
-database. If it's a valid id, then good, we can use it to find the relevant
-record to edit, but we'd rather confine the returned data to fields that will
-be edited so we need to pop it regardless.
+In the above example, note how we use the `exclude_field` processor to remove the value of `user_id` from the returned data. If you think about it after validating the data, we don't actually want to push the `user_id` back in the database. If it's a valid id, then good, we can use it to find the relevant record to edit, but we'd rather confine the returned data to fields that will be edited so we need to pop it regardless.
 
+    ```python
     try:
         result = user_schema.validate(data)
         # we excluded user_id, but we'd still like to work with it
@@ -677,28 +676,23 @@ be edited so we need to pop it regardless.
     except DBError as e:
         # handle db failure here
         pass
+    ```
 
-
------
-- validation order
+- validation sequence
 
     - Extra fields
     - Required or Default 
     - type
 
-    - pre_validation
+    - pre-validation
     - empty, null
-    - post_validation
-"""
+    - post-validation
 
----
 # Modifiers:
-- default: 
-    a `default` modifier will be called upon when no value (undef) has been given to the processor it is applied to. It will return a value for the processor to work with.
+- default: a `default` modifier is called upon when no value (undef) has been given to the processor it is applied to. It will return a value for the processor to work with.
 
-- override: 
-    an `override` modifier applied to a processor will intercept the value passed to the processor. It will then discard, replace, or modify it and will submit the result to the processor.
+- override: an `override` modifier applied to a processor will intercept the value passed to the processor. It will then discard, replace, or modify it and will submit the result to the processor.
 
-- failsafe: 
-    a `failsafe` modifier, when applied to a processor will intervene after the processor has failed validation. Its returned value is what is passed to the remaining validation chain.
+- failsafe: a `failsafe` modifier, when applied to a processor will intervene after the processor has failed validation. Its returned value is what is passed to the remaining validation chain.
+
 
