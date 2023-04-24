@@ -12,9 +12,9 @@ Being a validation library, I feel compelled to post this warning, while I'm wri
 
 Python is blessed with a plethora of high quality libraries to solve all kinds of problems and validation is no exception. Most Python validation libraries tend to be declarative. You describe a schema and during validation the data is processed against it. Vino take a procedural approach by contrast. You not only describe what you want, but the sequence of those events also matters. 
 
-##--- TODO 
+## -- TODO 
 quick example should go here
-##---
+## --
 
 To give a simplified and very abstract overview of the concepts behind a Vino schema, it will typically be made up of 2 types of constructs: contexts and instructions, arranged together to guide validation in a precise sequence.
 
@@ -36,9 +36,9 @@ Vino schemas are made up of 4 main components:
 - **Arrays**: represent JSON *arrays*. The data to validate may contain a collection of unnamed items that can be *Primitives*, *Arrays*, or *Objects*.
 - **Processors**: these are the constructs that hold the validation logic. They're tasked with either validating, transforming, ignoring, or sometimes removing data items submitted for validation.
     
-##--- TODO 
+## -- TODO 
 the next paragraphs should go under the section discussing creation of Processors.
-##---
+## --
 
 Except for 3 special cases (discussed a bit later), Vino makes little distinction between processors, they all take the same elements as input, raise some `vino.Validation` error when they fail to perform their task, or return the valid data on success.
 
@@ -216,7 +216,7 @@ When validating an Array you're working in two contexts:
     )
     ```
     
-##--- TODO
+## -- TODO
 review the next two paragraphs to determine which is which.
 
 Validation of array items present some notable exceptions to the usual rules:
@@ -233,7 +233,7 @@ Validation of array items present some notable exceptions to the usual rules:
     - individual declaration of items in a bundle serves to affect the validation of those specific items, not to give order or priority to their validation.
     - within the bundle declaration (`items()`), processors still do obey the order of declaration.
 
-##---
+## --
 
 Validating all array items at once is probably the most common use-case, but it's also possible to craft a schema that specifies a declaration for individual items.
 
@@ -276,13 +276,13 @@ In fact you can target individual items for validation by passing a list of indi
     a = vino.arr(items(odd, even))
     ```
 
-##--- TODO
+## -- TODO
 Find a better way to handle this. As it is the validation will first process the even batch then the odd. I'd like something that can process a zipped batch to stay consistent with the scripted character of the library. 
 
 One solution would be to apply a flag at the array level to specify the kind of sequencing should be followed for validation. It would specify in which order the data items are validated, 
 - case 1: iterate through the list of data items and match their position with one or more batches before applying the validation. 
 - case 2: iterate through the batches and apply validations to each matching item.
-##---
+## --
 
 
 - Objects: a representation of a json object, an object holds a set of other
@@ -454,9 +454,9 @@ Let's drive the point home with some code:
     ...     # meanwhile the following will have its 3 *implicit* processors set to False.
     ...     first_name_schema = prim(name('first_name'))
 
-##--- TODO
+## -- TODO
 New content to review
-##---
+## --
 
 
 - How to handle missing, blank and null fields:
@@ -556,9 +556,9 @@ for all three types.
     data['email'] = None
     validate(data, user_schema) # will pass
 
-##--- TODO
+## -- TODO
 explain the rationale in making a distinction between null and empty values
-##---
+## --
 
 - handling null values
 Only `None` is considered a null value from within Python. Just like with
@@ -634,9 +634,9 @@ The `failed` attribute and `throw()` and `end()` processors
 
 - there may be situations where instead of having your validation raise an error you want to handle things differently. You can pass a list of processors to the `failed` attribute :
 
-##--- TODO
+## -- TODO
 Better explain this example.
-##---
+## --
 
 E.g. Consider the case of a user profile form that you use both for registration and for updates. The form has both `password` and `confirm_password` fields. If you submit the `password` field you want to ensure that the `confirm_password` field also matches. If you don't submit `password`, you don't just want the `required` validation to fail, you want to first make sure that the user indeed already exists, if it's the case you want to end validation for the `password` field and move on to the next field.
 
