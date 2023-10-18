@@ -1,9 +1,9 @@
 # sentinel
 _undef = object()
 def is_rangelike(r):
-    return (False if (not hasattr(r, 'start')) 
+    return (False if (not hasattr(r, 'start'))
             or (not hasattr(r, 'stop'))
-            or (not hasattr(r, 'step')) 
+            or (not hasattr(r, 'step'))
             else True)
 
 def is_listlike(l):
@@ -14,7 +14,7 @@ def is_listlike(l):
         return False
 
 def is_intlike(value, positive=False, bool_as_int=False):
-    if not bool_as_int: 
+    if not bool_as_int:
         if value is True or value is False:
             return False
     try:
@@ -68,7 +68,7 @@ def is_bytes(value):
 
 def is_boolean(value, int_as_bool=False):
     if not int_as_bool:
-        if value is 1 or value is 0:
+        if value==1 or value==0:
             return False
     return value in (True, False)
 
@@ -93,7 +93,7 @@ class Proxy:
 
     def __init__(self, obj):
         super(Proxy, self).__setattr__(self, "_obj", obj)
-    
+
     #
     # proxying (special cases)
     #
@@ -105,14 +105,14 @@ class Proxy:
 
     def __setattr__(self, name, value):
         setattr(super(Proxy, self).__getattribute__(self, "_obj"), name, value)
-    
+
     def __nonzero__(self):
         return bool(super(Proxy, self).__getattribute__(self, "_obj"))
     def __str__(self):
         return str(super(Proxy, self).__getattribute__(self, "_obj"))
     def __repr__(self):
         return repr(super(Proxy, self).__getattribute__(self, "_obj"))
-    
+
     #
     # factories
     #
@@ -132,26 +132,26 @@ class Proxy:
         '__rtruediv__', '__rxor__', '__setitem__', '__setslice__', '__sub__',
         '__truediv__', '__xor__', 'next',
     ]
-    
+
     @classmethod
     def _create_class_proxy(cls, theclass):
         """creates a proxy for the given class"""
-        
+
         def make_method(name):
             def method(self, *args, **kw):
                 return getattr(super(Proxy, self).__getattribute__(self, "_obj"), name)(*args, **kw)
             return method
-        
+
         namespace = {}
         for name in cls._special_names:
             if hasattr(theclass, name):
                 namespace[name] = make_method(name)
         return type("%s(%s)" % (cls.__name__, theclass.__name__), (cls,), namespace)
-    
+
     def __new__(cls, obj, *args, **kwargs):
         """
         creates a proxy instance referencing `obj`. (obj, *args, **kwargs) are
-        passed to this class' __init__, so deriving classes can define an 
+        passed to this class' __init__, so deriving classes can define an
         __init__ method of their own.
         note: _class_proxy_cache is unique per deriving class (each deriving
         class must hold its own cache)
