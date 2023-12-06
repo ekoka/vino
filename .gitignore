@@ -1,11 +1,5 @@
-gitmsg.gitcommit
 *.pyc
 .cache
 .pytest*
-tsk
-uwsgi.ini
-website/*.html
-templates/pages
-logs
-website
-templates/pages
+*.egg-info
+build
