@@ -17,12 +17,12 @@ Here's an abstract overview of the concepts. A Vino schema is typically made up 
 
 ```python
 schema = ctx(
-    ctx(instruction, processor, processor),
+    ctx(instruction, instruction, instruction),
     ctx(instruction),
     instruction,
     instruction,
-    ctx(instruction, processor, ctx(processor))
-    ctx(ctx(instruction), ctx(processor), processor)
+    ctx(instruction, instruction, ctx(instruction))
+    ctx(ctx(instruction), ctx(instruction), instruction)
     instruction,
 )
 ```
