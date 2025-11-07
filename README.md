@@ -1,5 +1,5 @@
-## /!\ This library is a work in progress.
-Being a validation library, I feel compelled to post this warning, while I'm writing its documentation. I think it's a great tool and I already use it myself in my own personal projects, but that's because I built it and know all its nooks and crannies :) Feel free to download the code to play in *non-critical* settings.
+## /!\ This library is not maintained. 
+## Use Pydantic instead. It's fast, it works, I use it.
 
 # Vino: a data validation toolkit
 
